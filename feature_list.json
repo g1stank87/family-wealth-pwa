@@ -1,0 +1,263 @@
+{
+  "project": "家庭资产负债管理 PWA",
+  "version": "1.0.0",
+  "description": "家庭资产台账、负债台账、财务报表、配置比例的渐进式 Web 应用",
+  "features": [
+    {
+      "id": "F001",
+      "category": "foundation",
+      "priority": "P0",
+      "passes": false,
+      "title": "PWA 基础架构",
+      "description": "index.html + manifest.json + Service Worker，实现可安装的 PWA shell"
+    },
+    {
+      "id": "F002",
+      "category": "foundation",
+      "priority": "P0",
+      "passes": false,
+      "title": "数据层基础架构",
+      "description": "LocalStorage 抽象层 + 资产/负债基础数据模型 + 种子数据导入"
+    },
+    {
+      "id": "F003",
+      "category": "foundation",
+      "priority": "P0",
+      "passes": false,
+      "title": "SPA 路由系统",
+      "description": "简易 hash 路由 (#/assets, #/liabilities, #/reports, #/allocation)"
+    },
+    {
+      "id": "F004",
+      "category": "ui",
+      "priority": "P0",
+      "passes": false,
+      "title": "移动端基础 UI 框架",
+      "description": "底部导航栏 + 响应式布局 + 主题色（深蓝+金）"
+    },
+    {
+      "id": "F005",
+      "category": "asset",
+      "priority": "P1",
+      "passes": false,
+      "title": "资产台账列表页",
+      "description": "按资产类型分组展示，支持折叠/展开，显示汇总行"
+    },
+    {
+      "id": "F006",
+      "category": "asset",
+      "priority": "P1",
+      "passes": false,
+      "title": "资产条目新增",
+      "description": "表单录入：类型、城市、名称、买入年份、单价、面积/数量，支持手动/预估切换"
+    },
+    {
+      "id": "F007",
+      "category": "asset",
+      "priority": "P1",
+      "passes": false,
+      "title": "资产条目编辑",
+      "description": "点击条目进入编辑页，支持所有字段修改"
+    },
+    {
+      "id": "F008",
+      "category": "asset",
+      "priority": "P1",
+      "passes": false,
+      "title": "资产条目删除",
+      "description": "滑动删除或长按删除，二次确认"
+    },
+    {
+      "id": "F009",
+      "category": "asset",
+      "priority": "P1",
+      "passes": false,
+      "title": "资产年度追踪",
+      "description": "年度选择器（2023-2030），切换显示不同年份的数据视图"
+    },
+    {
+      "id": "F010",
+      "category": "asset",
+      "priority": "P2",
+      "passes": false,
+      "title": "资产类型扩展",
+      "description": "支持：自用房产、自用车辆、自用其他、投资性住房、投资性股票/基金、金融资产（存款/债券/保险）"
+    },
+    {
+      "id": "F011",
+      "category": "asset",
+      "priority": "P2",
+      "passes": false,
+      "title": "资产初始化功能",
+      "description": "设置历史成本、初始化累计收益，作为后续年度计算基准"
+    },
+    {
+      "id": "F012",
+      "category": "asset",
+      "priority": "P2",
+      "passes": false,
+      "title": "资产累计收益计算",
+      "description": "持有收益 = 估值 - 成本，处置收益 = 卖出价 - 成本，累计收益率自动计算"
+    },
+    {
+      "id": "F013",
+      "category": "liability",
+      "priority": "P1",
+      "passes": false,
+      "title": "负债台账列表页",
+      "description": "按负债类型分组（银行负债、非银行负债、私人负债），显示汇总行"
+    },
+    {
+      "id": "F014",
+      "category": "liability",
+      "priority": "P1",
+      "passes": false,
+      "title": "负债条目新增",
+      "description": "表单录入：类型、债权人名称、借入年份、借入利率、借入金额、剩余期限"
+    },
+    {
+      "id": "F015",
+      "category": "liability",
+      "priority": "P1",
+      "passes": false,
+      "title": "负债条目编辑",
+      "description": "修改债权人、利率、期限等信息"
+    },
+    {
+      "id": "F016",
+      "category": "liability",
+      "priority": "P1",
+      "passes": false,
+      "title": "负债条目删除",
+      "description": "删除负债条目，二次确认"
+    },
+    {
+      "id": "F017",
+      "category": "liability",
+      "priority": "P2",
+      "passes": false,
+      "title": "负债年度付息计算",
+      "description": "根据利率和剩余期限计算年末应付本息、应付本金、应付利息"
+    },
+    {
+      "id": "F018",
+      "category": "liability",
+      "priority": "P2",
+      "passes": false,
+      "title": "负债初始化功能",
+      "description": "设置初始借入金额、初始化累计支付利息/本金"
+    },
+    {
+      "id": "F019",
+      "category": "report",
+      "priority": "P1",
+      "passes": false,
+      "title": "财务报表-资产负债表",
+      "description": "按年度展开：资产合计、负债合计、净资产，自动从台账汇总"
+    },
+    {
+      "id": "F020",
+      "category": "report",
+      "priority": "P2",
+      "passes": false,
+      "title": "财务报表-收益表",
+      "description": "当年持有收益、处置收益、利息支出、净收益"
+    },
+    {
+      "id": "F021",
+      "category": "report",
+      "priority": "P2",
+      "passes": false,
+      "title": "多年度对比视图",
+      "description": "2023-2026 年度数据并排对比，趋势分析"
+    },
+    {
+      "id": "F022",
+      "category": "allocation",
+      "priority": "P1",
+      "passes": false,
+      "title": "配置比例看板",
+      "description": "饼图展示：自用性 vs 投资性、实物 vs 金融，与目标比例对比"
+    },
+    {
+      "id": "F023",
+      "category": "allocation",
+      "priority": "P2",
+      "passes": false,
+      "title": "配置目标设置",
+      "description": "设置各类资产配置目标比例（如：自用10%/投资90%）"
+    },
+    {
+      "id": "F024",
+      "category": "allocation",
+      "priority": "P2",
+      "passes": false,
+      "title": "配置偏离预警",
+      "description": "实际配置偏离目标超过阈值时，显示预警提示"
+    },
+    {
+      "id": "F025",
+      "category": "visualization",
+      "priority": "P2",
+      "passes": false,
+      "title": "资产趋势图表",
+      "description": "折线图展示资产总额、净资产历史趋势"
+    },
+    {
+      "id": "F026",
+      "category": "visualization",
+      "priority": "P2",
+      "passes": false,
+      "title": "收益贡献分解",
+      "description": "堆叠柱状图分解各类资产的收益贡献"
+    },
+    {
+      "id": "F027",
+      "category": "export",
+      "priority": "P2",
+      "passes": false,
+      "title": "数据导出 Excel",
+      "description": "使用 minimax-xlsx skill 导出完整报表为 Excel"
+    },
+    {
+      "id": "F028",
+      "category": "export",
+      "priority": "P3",
+      "passes": false,
+      "title": "数据导出 PDF",
+      "description": "使用 minimax-pdf skill 导出财务报表为 PDF"
+    },
+    {
+      "id": "F029",
+      "category": "pwa",
+      "priority": "P1",
+      "passes": false,
+      "title": "离线数据同步",
+      "description": "Service Worker 缓存 + LocalStorage，离线可用"
+    },
+    {
+      "id": "F030",
+      "category": "pwa",
+      "priority": "P2",
+      "passes": false,
+      "title": "PWA 图标生成",
+      "description": "使用 minimax-multimodal-toolkit 生成 App 图标和首屏插画"
+    },
+    {
+      "id": "F031",
+      "category": "data",
+      "priority": "P2",
+      "passes": false,
+      "title": "数据导入-从 Excel",
+      "description": "解析 Excel 文件导入资产/负债台账数据"
+    },
+    {
+      "id": "F032",
+      "category": "data",
+      "priority": "P3",
+      "passes": false,
+      "title": "数据备份与恢复",
+      "description": "JSON 格式全量备份/恢复"
+    }
+  ]
+}
