@@ -160,6 +160,19 @@ body {
   color: var(--text-light);
 }
 
+.asset-return {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.asset-return.positive {
+  color: var(--success);
+}
+
+.asset-return.negative {
+  color: var(--danger);
+}
+
 .asset-value {
   text-align: right;
   font-weight: 500;

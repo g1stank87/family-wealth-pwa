@@ -122,18 +122,24 @@ const App = {
           <span class="group-chevron">▼</span>
         </div>
         <ul class="asset-list group-items" id="group-${group.type}-${group.category}">
-          ${group.assets.map(asset => `
+          ${group.assets.map(asset => {
+            const ret = this.calculateAssetReturn(asset);
+            const returnDisplay = ret ? 
+              `<div class="asset-return ${ret.totalReturn >= 0 ? 'positive' : 'negative'}">${ret.totalReturn >= 0 ? '+' : ''}${this.formatMoney(ret.totalReturn)} 万</div>` :
+              '';
+            return `
             <li class="asset-item" onclick="App.showAssetForm('${asset.id}')">
               <div class="asset-info">
-                <div class="asset-name">${asset.name}</div>
+                <div class="asset-name">${asset.name}${asset.initialized ? ' 📊' : ''}</div>
                 <div class="asset-meta">${asset.city || ''} ${asset.area ? '· ' + asset.area + '㎡' : ''}</div>
+                ${returnDisplay}
               </div>
               <div class="asset-value">
                 <div>¥ ${this.formatMoney(asset.buyTotalPrice)} 万</div>
                 <div class="asset-meta">买入价</div>
               </div>
             </li>
-          `).join('')}
+          `}).join('')}
         </ul>
       </div>
     `;
@@ -375,6 +381,31 @@ const App = {
   
   formatMoney(num) {
     return (num || 0).toLocaleString('zh-CN', { maximumFractionDigits: 0 });
+  },
+
+  // F012: 资产累计收益计算
+  calculateAssetReturn(asset) {
+    if (!asset || !asset.initialized || !asset.initData) {
+      return null;
+    }
+    
+    const initData = asset.initData;
+    // 当前估值 = 买入价（简化处理）
+    const currentValue = asset.buyTotalPrice || 0;
+    // 持有收益 = 当前价值 - 初始化总价 + 累计持有收益
+    const holdReturn = currentValue - (initData.initTotalPrice || 0) + (initData.cumulativeHoldReturn || 0);
+    // 处置收益
+    const disposeReturn = initData.cumulativeDisposeReturn || 0;
+    // 总收益
+    const totalReturn = holdReturn + disposeReturn;
+    
+    return {
+      currentValue,
+      holdReturn,
+      disposeReturn,
+      totalReturn,
+      initialized: asset.initialized
+    };
   },
   
   // ========== F006/F007: 资产表单（新增+编辑） ==========
