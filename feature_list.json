@@ -147,7 +147,8 @@
       "id": "F017",
       "category": "liability",
       "priority": "P2",
-      "passes": false,
+      "passes": true,
+      "completedDate": "2026-04-07",
       "title": "负债年度付息计算",
       "description": "根据利率和剩余期限计算年末应付本息、应付本金、应付利息"
     },
@@ -155,7 +156,8 @@
       "id": "F018",
       "category": "liability",
       "priority": "P2",
-      "passes": false,
+      "passes": true,
+      "completedDate": "2026-04-07",
       "title": "负债初始化功能",
       "description": "设置初始借入金额、初始化累计支付利息/本金"
     },

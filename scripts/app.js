@@ -222,13 +222,18 @@ const App = {
           <span class="type-total negative">¥ ${this.formatMoney(group.total)} 万</span>
         </div>
         <ul class="liability-list">
-          ${group.liabilities.map(liability => `
+          ${group.liabilities.map(liability => {
+            const interest = this.calculateLiabilityInterest(liability);
+            return `
             <li class="liability-item" onclick="App.showLiabilityForm('${liability.id}')">
               <div class="liability-info">
-                <div class="liability-name">${liability.creditor}</div>
+                <div class="liability-name">${liability.creditor}${liability.initialized ? ' 📊' : ''}</div>
                 <div class="liability-meta">
-                  利率 ${(liability.interestRate * 100).toFixed(1)}% 
+                  年利率 ${(interest.interestRate * 100).toFixed(1)}% 
                   ${liability.remainingMonths ? '· 剩余 ' + liability.remainingMonths + ' 月' : ''}
+                </div>
+                <div class="liability-interest">
+                  年利息: <span class="negative">¥ ${this.formatMoney(interest.annualInterest)} 万</span>
                 </div>
               </div>
               <div class="liability-value negative">
@@ -236,7 +241,7 @@ const App = {
                 <div class="liability-meta">借入</div>
               </div>
             </li>
-          `).join('')}
+          `}).join('')}
           ${group.liabilities.length === 0 ? '<li class="empty-hint">暂无记录</li>' : ''}
         </ul>
       </div>
@@ -442,6 +447,19 @@ const App = {
     return this.data.liabilities
       .filter(l => l.type === type)
       .reduce((sum, l) => sum + (l.borrowAmount || 0), 0);
+  },
+
+  // F017: 负债年度利息计算
+  calculateLiabilityInterest(liability) {
+    if (!liability) return null;
+    const borrowAmount = liability.borrowAmount || 0;
+    const interestRate = liability.interestRate || 0;
+    const annualInterest = borrowAmount * interestRate;
+    return {
+      borrowAmount,
+      interestRate,
+      annualInterest
+    };
   },
   
   // ========== F006/F007: 资产表单（新增+编辑） ==========
