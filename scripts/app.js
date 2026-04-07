@@ -357,11 +357,94 @@ const App = {
     };
   },
 
+  // ========== F020: 财务报表-收益表 ==========
+
+  getIncomeStatementData(year) {
+    // 持有收益：已初始化资产的累计持有收益（简化处理：取全量，未来可按年度分解）
+    let totalHoldReturn = 0;
+    let totalDisposeReturn = 0;
+
+    this.data.assets.forEach(asset => {
+      if (asset.buyYear > year) return;
+      if (asset.initialized && asset.initData) {
+        totalHoldReturn += asset.initData.cumulativeHoldReturn || 0;
+        totalDisposeReturn += asset.initData.cumulativeDisposeReturn || 0;
+      }
+    });
+
+    // 利息支出：已初始化负债的累计已付利息（负数）
+    let totalInterestExpense = 0;
+    this.data.liabilities.forEach(l => {
+      if (l.buyYear > year) return;
+      if (l.initialized && l.initData) {
+        totalInterestExpense += l.initData.cumulativePaidInterest || 0;
+      }
+    });
+
+    // 净收益 = 持有收益 + 处置收益 - 利息支出（利息支出是负数，所以减）
+    const netIncome = totalHoldReturn + totalDisposeReturn + totalInterestExpense;
+
+    return {
+      totalHoldReturn,
+      totalDisposeReturn,
+      totalInterestExpense: Math.abs(totalInterestExpense),
+      netIncome,
+      year
+    };
+  },
+
   renderReports() {
     const main = document.getElementById('main-content');
     const year = this.data.settings.currentYear;
-    const bs = this.getBalanceSheetData(year);
+    const reportType = this.data.settings.reportType || 'balance';
 
+    // Tab switch header
+    const html = `
+      <div class="page-title">📊 ${year} 年财务报表</div>
+
+      <div class="year-selector">
+        ${[2023,2024,2025,2026,2027,2028,2029,2030].map(y => `
+          <button class="year-btn ${y === year ? 'active' : ''}"
+                  data-year="${y}">${y}</button>
+        `).join('')}
+      </div>
+
+      <div class="report-tabs">
+        <button class="report-tab ${reportType === 'balance' ? 'active' : ''}"
+                onclick="App.switchReport('balance')">
+          🏛️ 资产负债表
+        </button>
+        <button class="report-tab ${reportType === 'income' ? 'active' : ''}"
+                onclick="App.switchReport('income')">
+          📈 收益表
+        </button>
+      </div>
+
+      <div id="report-content">
+        ${reportType === 'balance' ? this.renderBalanceSheetHTML(year) : this.renderIncomeStatementHTML(year)}
+      </div>
+    `;
+
+    main.innerHTML = html;
+
+    // Year selector events
+    main.querySelectorAll('.year-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        this.data.settings.currentYear = parseInt(e.target.dataset.year);
+        DataLayer.save(this.data);
+        this.renderReports();
+      });
+    });
+  },
+
+  switchReport(type) {
+    this.data.settings.reportType = type;
+    DataLayer.save(this.data);
+    this.renderReports();
+  },
+
+  renderBalanceSheetHTML(year) {
+    const bs = this.getBalanceSheetData(year);
     const typeOrder = ['selfUse', 'investment', 'financial'];
     const liabilityTypeOrder = ['bank', 'nonBank', 'private'];
 
@@ -375,26 +458,10 @@ const App = {
 
         const catRows = Object.keys(categories).map(catKey => {
           const cat = categories[catKey];
-          return `
-            <div class="bs-row bs-sub-row">
-              <span class="bs-name">${cat.name}</span>
-              <span class="bs-value">¥ ${this.formatMoney(cat.total)} 万</span>
-            </div>
-          `;
+          return `<div class="bs-row bs-sub-row"><span class="bs-name">${cat.name}</span><span class="bs-value">¥ ${this.formatMoney(cat.total)} 万</span></div>`;
         }).join('');
 
-        return `
-          <div class="bs-section" data-type="${type}">
-            <div class="bs-section-header" onclick="App.toggleBsSection('asset-${type}')">
-              <span class="bs-section-title">${typeEmoji} ${typeName}</span>
-              <span class="bs-section-total">¥ ${this.formatMoney(typeTotal)} 万</span>
-              <span class="bs-chevron">▼</span>
-            </div>
-            <div class="bs-section-body" id="bs-asset-${type}">
-              ${catRows}
-            </div>
-          </div>
-        `;
+        return `<div class="bs-section" data-type="${type}"><div class="bs-section-header" onclick="App.toggleBsSection('asset-${type}')"><span class="bs-section-title">${typeEmoji} ${typeName}</span><span class="bs-section-total">¥ ${this.formatMoney(typeTotal)} 万</span><span class="bs-chevron">▼</span></div><div class="bs-section-body" id="bs-asset-${type}">${catRows}</div></div>`;
       }).join('');
     };
 
@@ -406,43 +473,15 @@ const App = {
         const typeName = group.name;
         const typeEmoji = type === 'bank' ? '🏦' : type === 'nonBank' ? '🏛️' : '👤';
 
-        const itemRows = group.items.map(l => `
-          <div class="bs-row bs-sub-row">
-            <span class="bs-name">${l.creditor}</span>
-            <span class="bs-value negative">¥ ${this.formatMoney(l.borrowAmount)} 万</span>
-          </div>
-        `).join('');
+        const itemRows = group.items.map(l => `<div class="bs-row bs-sub-row"><span class="bs-name">${l.creditor}</span><span class="bs-value negative">¥ ${this.formatMoney(l.borrowAmount)} 万</span></div>`).join('');
 
-        return `
-          <div class="bs-section" data-type="${type}">
-            <div class="bs-section-header" onclick="App.toggleBsSection('liability-${type}')">
-              <span class="bs-section-title">${typeEmoji} ${typeName}</span>
-              <span class="bs-section-total negative">¥ ${this.formatMoney(typeTotal)} 万</span>
-              <span class="bs-chevron">▼</span>
-            </div>
-            <div class="bs-section-body" id="bs-liability-${type}">
-              ${itemRows}
-            </div>
-          </div>
-        `;
+        return `<div class="bs-section" data-type="${type}"><div class="bs-section-header" onclick="App.toggleBsSection('liability-${type}')"><span class="bs-section-title">${typeEmoji} ${typeName}</span><span class="bs-section-total negative">¥ ${this.formatMoney(typeTotal)} 万</span><span class="bs-chevron">▼</span></div><div class="bs-section-body" id="bs-liability-${type}">${itemRows}</div></div>`;
       }).join('');
     };
 
-    main.innerHTML = `
-      <div class="page-title">📊 ${year} 年资产负债表</div>
-
-      <div class="year-selector">
-        ${[2023,2024,2025,2026,2027,2028,2029,2030].map(y => `
-          <button class="year-btn ${y === year ? 'active' : ''}"
-                  data-year="${y}">${y}</button>
-        `).join('')}
-      </div>
-
-      <!-- 资产部分 -->
+    return `
       <div class="card bs-card">
-        <div class="bs-card-header">
-          <span class="bs-card-title">💰 资产</span>
-        </div>
+        <div class="bs-card-header"><span class="bs-card-title">💰 资产</span></div>
         ${renderAssetSection()}
         <div class="bs-total-row">
           <span class="bs-total-label">资产合计</span>
@@ -450,11 +489,8 @@ const App = {
         </div>
       </div>
 
-      <!-- 负债部分 -->
       <div class="card bs-card">
-        <div class="bs-card-header">
-          <span class="bs-card-title">📋 负债</span>
-        </div>
+        <div class="bs-card-header"><span class="bs-card-title">📋 负债</span></div>
         ${renderLiabilitySection()}
         <div class="bs-total-row">
           <span class="bs-total-label">负债合计</span>
@@ -462,35 +498,67 @@ const App = {
         </div>
       </div>
 
-      <!-- 净资产部分 -->
       <div class="card bs-card bs-net-card">
         <div class="bs-total-row net">
           <span class="bs-total-label">📐 净资产</span>
-          <span class="bs-total-value ${bs.netAssets >= 0 ? 'positive' : 'negative'}">
-            ¥ ${this.formatMoney(bs.netAssets)} 万
-          </span>
+          <span class="bs-total-value ${bs.netAssets >= 0 ? 'positive' : 'negative'}">¥ ${this.formatMoney(bs.netAssets)} 万</span>
         </div>
-        <div class="bs-formula">
-          净资产 = 资产合计（¥ ${this.formatMoney(bs.totalAssets)} 万）
-                - 负债合计（¥ ${this.formatMoney(bs.totalLiabilities)} 万）
-        </div>
+        <div class="bs-formula">净资产 = 资产合计（¥ ${this.formatMoney(bs.totalAssets)} 万） - 负债合计（¥ ${this.formatMoney(bs.totalLiabilities)} 万）</div>
       </div>
 
-      <div class="data-source-note">
-        💡 数据自动汇总自资产台账、负债台账
+      <div class="data-source-note">💡 数据自动汇总自资产台账、负债台账</div>
+    `;
+  },
+
+  renderIncomeStatementHTML(year) {
+    const is = this.getIncomeStatementData(year);
+
+    const itemCard = (emoji, title, value, note, isPositive) => `
+      <div class="income-item">
+        <div class="income-item-header">
+          <span class="income-emoji">${emoji}</span>
+          <span class="income-title">${title}</span>
+        </div>
+        <div class="income-value ${isPositive ? 'positive' : 'negative'}">¥ ${this.formatMoney(value)} 万</div>
+        ${note ? `<div class="income-note">${note}</div>` : ''}
       </div>
     `;
 
-    // Year selector events
-    main.querySelectorAll('.year-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        this.data.settings.currentYear = parseInt(e.target.dataset.year);
-        DataLayer.save(this.data);
-        this.renderReports();
-      });
-    });
-  },
+    return `
+      <div class="card income-card">
+        <div class="card-title">📈 ${year} 年收益表</div>
 
+        ${itemCard('🏠', '持有收益', is.totalHoldReturn, '资产持有期间的价值增长/缩水 + 现金收益', true)}
+        ${itemCard('🏦', '处置收益', is.totalDisposeReturn, '历史处置资产的已实现盈亏', true)}
+        ${itemCard('📉', '利息支出', is.totalInterestExpense, '负债历年已付利息（累计值）', false)}
+
+        <div class="income-divider"></div>
+
+        <div class="income-net">
+          <div class="income-net-label">📊 净收益</div>
+          <div class="income-net-value ${is.netIncome >= 0 ? 'positive' : 'negative'}">
+            ¥ ${this.formatMoney(is.netIncome)} 万
+          </div>
+          <div class="income-formula">
+            净收益 = 持有收益（¥${this.formatMoney(is.totalHoldReturn)} 万）
+                   + 处置收益（¥${this.formatMoney(is.totalDisposeReturn)} 万）
+                   - 利息支出（¥${this.formatMoney(is.totalInterestExpense)} 万）
+          </div>
+        </div>
+      </div>
+
+      <div class="card income-breakdown">
+        <div class="card-title">💡 收益构成说明</div>
+        <div class="income-explain">
+          <div class="explain-item"><span class="explain-badge positive">+</span> 持有收益：房产增值、租金、股票分红等</div>
+          <div class="explain-item"><span class="explain-badge positive">+</span> 处置收益：卖掉资产时的已实现盈亏</div>
+          <div class="explain-item"><span class="explain-badge negative">−</span> 利息支出：房贷等负债的已付利息总和</div>
+        </div>
+      </div>
+
+      <div class="data-source-note">💡 数据来自已初始化的资产/负债记录</div>
+    `;
+  },
   toggleBsSection(id) {
     const body = document.getElementById(`bs-${id}`);
     const header = body.previousElementSibling;

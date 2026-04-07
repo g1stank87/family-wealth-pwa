@@ -771,3 +771,159 @@ body {
   margin-top: 12px;
   padding: 8px;
 }
+
+/* F020: 收益表样式 */
+.report-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.report-tab {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.report-tab.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.income-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.income-item {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.income-item:last-of-type {
+  border-bottom: none;
+}
+
+.income-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.income-emoji {
+  font-size: 16px;
+}
+
+.income-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.income-value {
+  font-size: 20px;
+  font-weight: 700;
+  padding-left: 24px;
+}
+
+.income-value.positive {
+  color: var(--success);
+}
+
+.income-value.negative {
+  color: var(--danger);
+}
+
+.income-note {
+  font-size: 11px;
+  color: var(--text-light);
+  padding-left: 24px;
+  margin-top: 2px;
+}
+
+.income-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0;
+}
+
+.income-net {
+  padding: 16px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  color: white;
+}
+
+.income-net-label {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.income-net-value {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.income-net-value.positive {
+  color: var(--accent);
+}
+
+.income-net-value.negative {
+  color: #fc8181;
+}
+
+.income-formula {
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  font-family: monospace;
+  line-height: 1.6;
+}
+
+.income-breakdown {
+  margin-top: 12px;
+}
+
+.income-explain {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.explain-item {
+  font-size: 12px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.explain-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.explain-badge.positive {
+  background: rgba(56, 161, 105, 0.15);
+  color: var(--success);
+}
+
+.explain-badge.negative {
+  background: rgba(229, 62, 62, 0.15);
+  color: var(--danger);
+}
