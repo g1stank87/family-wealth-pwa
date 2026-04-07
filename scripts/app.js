@@ -829,8 +829,150 @@ const App = {
         </div>
       </div>
 
-      <div class="data-source-note">💡 点击右上角 ⚙️ 可配置目标比例</div>
+      <div class="alloc-settings-btn">
+        <button class="btn btn-primary" onclick="App.showAllocationSettings()">⚙️ 设置目标</button>
+      </div>
     `;
+  },
+
+  showAllocationSettings() {
+    const main = document.getElementById('main-content');
+    const targets = this.data.settings.targetAllocation || {
+      selfUse: 0.1, investment: 0.9, realAsset: 0.225, financial: 0.775
+    };
+
+    main.innerHTML = `
+      <div class="form-header">
+        <button class="btn-back" onclick="App.renderAllocation()">← 返回</button>
+        <h2>⚙️ 配置目标设置</h2>
+      </div>
+
+      <div class="card form-card">
+        <div class="form-hint-banner">调整目标比例后，看板中的偏离预警会自动更新</div>
+
+        <form onsubmit="App.saveAllocationSettings(event)">
+          <div class="form-section-title">🏠 自用性 vs 投资性</div>
+
+          <div class="form-group">
+            <label class="form-label">自用资产目标比例（%）</label>
+            <div class="slider-row">
+              <input type="range" class="slider" id="targetSelfUse" 
+                     min="0" max="100" step="1"
+                     value="${(targets.selfUse * 100).toFixed(0)}"
+                     oninput="App.onSliderChange('targetSelfUse', 'selfUseVal')">
+              <span class="slider-val" id="selfUseVal">${(targets.selfUse * 100).toFixed(0)}%</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">投资资产目标比例（%）</label>
+            <div class="slider-row">
+              <input type="range" class="slider" id="targetInvestment" 
+                     min="0" max="100" step="1"
+                     value="${(targets.investment * 100).toFixed(0)}"
+                     oninput="App.onSliderChange('targetInvestment', 'investVal')">
+              <span class="slider-val" id="investVal">${(targets.investment * 100).toFixed(0)}%</span>
+            </div>
+          </div>
+
+          <div class="form-hint" id="investHint" style="color: ${(targets.investment + targets.selfUse) !== 1 ? 'var(--danger)' : 'var(--text-light)'}">
+            自用 + 投资 = ${((targets.selfUse + targets.investment) * 100).toFixed(0)}% ${(targets.selfUse + targets.investment) !== 1 ? '(应等于100%)' : '✅'}
+          </div>
+
+          <div class="form-section-title">🏗️ 实物 vs 金融资产</div>
+
+          <div class="form-group">
+            <label class="form-label">实物资产目标比例（%）</label>
+            <div class="slider-row">
+              <input type="range" class="slider" id="targetReal" 
+                     min="0" max="100" step="1"
+                     value="${(targets.realAsset * 100).toFixed(0)}"
+                     oninput="App.onSliderChange('targetReal', 'realVal')">
+              <span class="slider-val" id="realVal">${(targets.realAsset * 100).toFixed(0)}%</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">金融资产目标比例（%）</label>
+            <div class="slider-row">
+              <input type="range" class="slider" id="targetFinancial" 
+                     min="0" max="100" step="1"
+                     value="${(targets.financial * 100).toFixed(0)}"
+                     oninput="App.onSliderChange('targetFinancial', 'finVal')">
+              <span class="slider-val" id="finVal">${(targets.financial * 100).toFixed(0)}%</span>
+            </div>
+          </div>
+
+          <div class="form-hint" id="finHint" style="color: ${(targets.realAsset + targets.financial) !== 1 ? 'var(--danger)' : 'var(--text-light)'}">
+            实物 + 金融 = ${((targets.realAsset + targets.financial) * 100).toFixed(0)}% ${(targets.realAsset + targets.financial) !== 1 ? '(应等于100%)' : '✅'}
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="App.renderAllocation()">取消</button>
+            <button type="submit" class="btn btn-primary">保存</button>
+          </div>
+        </form>
+      </div>
+    `;
+  },
+
+  onSliderChange(sliderId, valId) {
+    const slider = document.getElementById(sliderId);
+    const valSpan = document.getElementById(valId);
+    valSpan.textContent = slider.value + '%';
+
+    // Update hint
+    const selfUse = parseFloat(document.getElementById('targetSelfUse').value);
+    const investment = parseFloat(document.getElementById('targetInvestment').value);
+    const real = parseFloat(document.getElementById('targetReal').value);
+    const fin = parseFloat(document.getElementById('targetFinancial').value);
+
+    const investHint = document.getElementById('investHint');
+    const finHint = document.getElementById('finHint');
+
+    const investSum = selfUse + investment;
+    const finSum = real + fin;
+
+    if (investSum !== 100) {
+      investHint.textContent = `自用 + 投资 = ${investSum}% (应等于100%)`;
+      investHint.style.color = 'var(--danger)';
+    } else {
+      investHint.textContent = `自用 + 投资 = ${investSum}% ✅`;
+      investHint.style.color = 'var(--success)';
+    }
+
+    if (finSum !== 100) {
+      finHint.textContent = `实物 + 金融 = ${finSum}% (应等于100%)`;
+      finHint.style.color = 'var(--danger)';
+    } else {
+      finHint.textContent = `实物 + 金融 = ${finSum}% ✅`;
+      finHint.style.color = 'var(--success)';
+    }
+  },
+
+  saveAllocationSettings(event) {
+    event.preventDefault();
+
+    const selfUse = parseFloat(document.getElementById('targetSelfUse').value) / 100;
+    const investment = parseFloat(document.getElementById('targetInvestment').value) / 100;
+    const realAsset = parseFloat(document.getElementById('targetReal').value) / 100;
+    const financial = parseFloat(document.getElementById('targetFinancial').value) / 100;
+
+    // Validate
+    if (Math.abs(selfUse + investment - 1) > 0.001) {
+      alert('自用 + 投资必须等于100%');
+      return;
+    }
+    if (Math.abs(realAsset + financial - 1) > 0.001) {
+      alert('实物 + 金融必须等于100%');
+      return;
+    }
+
+    this.data.settings.targetAllocation = {
+      selfUse, investment, realAsset, financial
+    };
+    DataLayer.save(this.data);
+    this.renderAllocation();
   },
   
   // ========== F009: 计算方法（带年份过滤） ==========

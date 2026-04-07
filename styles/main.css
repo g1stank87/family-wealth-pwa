@@ -1211,3 +1211,58 @@ body {
   font-weight: 500;
   color: var(--text);
 }
+
+/* F023: 配置目标设置 */
+.alloc-settings-btn {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.form-hint-banner {
+  background: rgba(26, 54, 93, 0.08);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--primary);
+  margin-bottom: 16px;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+}
+
+.slider-val {
+  min-width: 45px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--primary);
+}
+
+.form-hint {
+  font-size: 12px;
+  margin-top: 4px;
+  margin-bottom: 12px;
+  transition: color 0.2s;
+}

@@ -201,9 +201,10 @@
       "id": "F023",
       "category": "allocation",
       "priority": "P2",
-      "passes": false,
+      "passes": true,
       "title": "配置目标设置",
-      "description": "设置各类资产配置目标比例（如：自用10%/投资90%）"
+      "description": "设置各类资产配置目标比例（如：自用10%/投资90%）",
+      "completedDate": "2026-04-08"
     },
     {
       "id": "F024",
