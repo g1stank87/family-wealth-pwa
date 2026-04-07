@@ -39,7 +39,8 @@
       "id": "F005",
       "category": "asset",
       "priority": "P1",
-      "passes": false,
+      "passes": true,
+      "completedDate": "2026-04-07",
       "title": "资产台账列表页",
       "description": "按资产类型分组展示，支持折叠/展开，显示汇总行"
     },

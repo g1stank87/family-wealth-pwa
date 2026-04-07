@@ -292,3 +292,106 @@ body {
   font-weight: 600;
   color: var(--accent);
 }
+
+/* F005: 资产分组显示 */
+.asset-type-section {
+  padding: 12px;
+}
+
+.type-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 4px;
+  margin-bottom: 8px;
+  border-bottom: 2px solid var(--primary);
+}
+
+.type-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.type-total {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.asset-group {
+  margin-bottom: 8px;
+}
+
+.group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 8px;
+  background: var(--bg);
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.group-header:active {
+  background: var(--border);
+}
+
+.group-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.group-total {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.group-chevron {
+  font-size: 10px;
+  color: var(--text-light);
+  transition: transform 0.2s;
+}
+
+.group-items {
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.group-items.collapsed {
+  max-height: 0 !important;
+}
+
+.group-items .asset-item {
+  padding: 10px 8px 10px 16px;
+}
+
+.grand-total-card {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  margin-top: 8px;
+}
+
+.grand-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 4px;
+}
+
+.grand-total-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+}
+
+.grand-total-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+}
