@@ -730,7 +730,183 @@ const App = {
     this.renderAssets();
   },
   
-  showLiabilityForm() {
-    alert('F014 负债新增 - 待实现');
+  // ========== F014/F015: 负债表单（新增+编辑） ==========
+
+  showLiabilityForm(liabilityId) {
+    const isEditMode = !!liabilityId;
+    const liability = isEditMode ? this.data.liabilities.find(l => l.id === liabilityId) : null;
+    
+    const main = document.getElementById('main-content');
+    main.innerHTML = `
+      <div class="form-header">
+        <button class="btn-back" onclick="App.renderLiabilities()">← 返回</button>
+        <h2>${isEditMode ? '编辑负债' : '新增负债'}</h2>
+      </div>
+      
+      <div class="card form-card">
+        <form id="liabilityForm" onsubmit="App.saveLiability(event, '${liabilityId || ''}')">
+          <input type="hidden" id="editLiabilityId" value="${liabilityId || ''}">
+          
+          <div class="form-group">
+            <label class="form-label">负债类型 *</label>
+            <select class="form-input" id="liabilityType" required>
+              <option value="">请选择</option>
+              <option value="bank" ${liability && liability.type === 'bank' ? 'selected' : ''}>银行负债</option>
+              <option value="nonBank" ${liability && liability.type === 'nonBank' ? 'selected' : ''}>非银行负债</option>
+              <option value="private" ${liability && liability.type === 'private' ? 'selected' : ''}>私人负债</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">债权人名称 *</label>
+            <input type="text" class="form-input" id="liabilityCreditor" required 
+                   placeholder="如：建设银行" value="${liability ? liability.creditor || '' : ''}">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">借入年份 *</label>
+            <input type="number" class="form-input" id="liabilityBuyYear" required 
+                   min="1990" max="2030" value="${liability ? liability.buyYear || new Date().getFullYear() : new Date().getFullYear()}">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">年利率</label>
+              <input type="number" class="form-input" id="liabilityInterestRate" 
+                     placeholder="如：5 表示 5%" min="0" max="100" step="0.1"
+                     value="${liability ? (liability.interestRate * 100) || '' : ''}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">剩余期限（月）</label>
+              <input type="number" class="form-input" id="liabilityRemainingMonths" 
+                     placeholder="如：240" min="0">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">借入金额（万元） *</label>
+            <input type="number" class="form-input" id="liabilityBorrowAmount" required 
+                   placeholder="如：5000" min="0" step="0.1"
+                   value="${liability ? liability.borrowAmount || '' : ''}">
+          </div>
+          
+          ${isEditMode ? `
+          <div class="form-section-title">📋 初始化数据</div>
+          <div class="init-section">
+            <div class="form-group">
+              <label class="form-label">初始借入金额（万元）</label>
+              <input type="number" class="form-input" id="initBorrowAmount" 
+                     placeholder="历史借入本金" min="0" step="0.1">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">累计未付利息（万元）</label>
+                <input type="number" class="form-input" id="cumulativeUnpaidInterest" 
+                       placeholder="正值=未付" step="0.1">
+              </div>
+              <div class="form-group">
+                <label class="form-label">累计已付利息（万元）</label>
+                <input type="number" class="form-input" id="cumulativePaidInterest" 
+                       placeholder="负值=已付" step="0.1">
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" class="btn btn-danger" onclick="App.deleteLiability('${liabilityId}')">删除</button>
+            <button type="submit" class="btn btn-primary">保存</button>
+          </div>
+          ` : `
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="App.renderLiabilities()">取消</button>
+            <button type="submit" class="btn btn-primary">保存</button>
+          </div>
+          `}
+        </form>
+      </div>
+    `;
+    
+    // F015: Load init data if editing
+    if (isEditMode && liability && liability.initData) {
+      document.getElementById('initBorrowAmount').value = liability.initData.initBorrowAmount || '';
+      document.getElementById('cumulativeUnpaidInterest').value = liability.initData.cumulativeUnpaidInterest || '';
+      document.getElementById('cumulativePaidInterest').value = liability.initData.cumulativePaidInterest || '';
+    }
+  },
+
+  saveLiability(event, editLiabilityId) {
+    event.preventDefault();
+    
+    const editId = editLiabilityId || document.getElementById('editLiabilityId').value;
+    const type = document.getElementById('liabilityType').value;
+    const creditor = document.getElementById('liabilityCreditor').value.trim();
+    const buyYear = parseInt(document.getElementById('liabilityBuyYear').value);
+    const interestRate = parseFloat(document.getElementById('liabilityInterestRate').value) / 100 || 0;
+    const remainingMonths = parseInt(document.getElementById('liabilityRemainingMonths').value) || 0;
+    const borrowAmount = parseFloat(document.getElementById('liabilityBorrowAmount').value) || 0;
+    
+    // Validation
+    if (!type) { alert('请选择负债类型'); return; }
+    if (!creditor) { alert('请输入债权人名称'); return; }
+    if (!borrowAmount) { alert('请输入借入金额'); return; }
+    
+    // F018: Get init data
+    const initBorrowAmount = parseFloat(document.getElementById('initBorrowAmount')?.value) || 0;
+    const cumulativeUnpaidInterest = parseFloat(document.getElementById('cumulativeUnpaidInterest')?.value) || 0;
+    const cumulativePaidInterest = parseFloat(document.getElementById('cumulativePaidInterest')?.value) || 0;
+    
+    const hasInitData = initBorrowAmount || cumulativeUnpaidInterest || cumulativePaidInterest;
+    
+    if (editId) {
+      // Update existing liability
+      const index = this.data.liabilities.findIndex(l => l.id === editId);
+      if (index !== -1) {
+        const existing = this.data.liabilities[index];
+        this.data.liabilities[index] = {
+          ...existing,
+          type,
+          creditor,
+          buyYear,
+          interestRate,
+          remainingMonths,
+          borrowAmount,
+          initialized: hasInitData,
+          initData: hasInitData ? {
+            initBorrowAmount,
+            cumulativeUnpaidInterest,
+            cumulativePaidInterest
+          } : existing.initData
+        };
+      }
+    } else {
+      // Create new liability
+      const id = 'L' + String(this.data.liabilities.length + 1).padStart(3, '0');
+      const liability = {
+        id,
+        type,
+        creditor,
+        buyYear,
+        interestRate,
+        remainingMonths,
+        borrowAmount,
+        initialized: false,
+        initData: null
+      };
+      this.data.liabilities.push(liability);
+    }
+    
+    DataLayer.save(this.data);
+    this.renderLiabilities();
+  },
+
+  deleteLiability(liabilityId) {
+    if (!confirm('确定要删除这个负债吗？')) return;
+    
+    const index = this.data.liabilities.findIndex(l => l.id === liabilityId);
+    if (index !== -1) {
+      this.data.liabilities.splice(index, 1);
+      DataLayer.save(this.data);
+    }
+    this.renderLiabilities();
   }
 };

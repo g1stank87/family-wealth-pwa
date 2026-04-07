@@ -120,7 +120,8 @@
       "id": "F014",
       "category": "liability",
       "priority": "P1",
-      "passes": false,
+      "passes": true,
+      "completedDate": "2026-04-07",
       "title": "负债条目新增",
       "description": "表单录入：类型、债权人名称、借入年份、借入利率、借入金额、剩余期限"
     },
