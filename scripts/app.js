@@ -261,51 +261,227 @@ const App = {
     `;
   },
   
+  // ========== F019: 财务报表-资产负债表 ==========
+
+  getBalanceSheetData(year) {
+    const typeNames = {
+      selfUse: '自用资产',
+      investment: '投资资产',
+      financial: '金融资产'
+    };
+
+    const categoryNames = {
+      selfUseRealEstate: '自用房产',
+      selfUseVehicle: '自用车辆',
+      selfUseOther: '自用其他',
+      investmentRealEstate: '投资房产',
+      investmentStock: '投资股票',
+      investmentFund: '投资基金',
+      stock: '股票',
+      fund: '基金',
+      bond: '债券',
+      cash: '现金/存款',
+      other: '其他'
+    };
+
+    const liabilityTypeNames = {
+      bank: '银行负债',
+      nonBank: '非银行负债',
+      private: '私人负债'
+    };
+
+    // Group assets by type then category
+    const assetGroups = {};
+    this.data.assets.forEach(asset => {
+      if (asset.buyYear > year) return;
+      const type = asset.type || 'financial';
+      const category = asset.category || 'other';
+      if (!assetGroups[type]) assetGroups[type] = {};
+      if (!assetGroups[type][category]) {
+        assetGroups[type][category] = {
+          name: categoryNames[category] || category,
+          items: [],
+          total: 0
+        };
+      }
+      assetGroups[type][category].items.push(asset);
+      assetGroups[type][category].total += asset.buyTotalPrice || 0;
+    });
+
+    // Group liabilities by type
+    const liabilityGroups = {};
+    this.data.liabilities.forEach(l => {
+      if (l.buyYear > year) return;
+      const type = l.type || 'bank';
+      if (!liabilityGroups[type]) {
+        liabilityGroups[type] = {
+          name: liabilityTypeNames[type] || type,
+          items: [],
+          total: 0
+        };
+      }
+      liabilityGroups[type].items.push(l);
+      liabilityGroups[type].total += l.borrowAmount || 0;
+    });
+
+    // Calculate totals
+    let totalAssets = 0;
+    const assetTypeTotals = {};
+    Object.keys(assetGroups).forEach(type => {
+      assetTypeTotals[type] = 0;
+      Object.keys(assetGroups[type]).forEach(cat => {
+        assetTypeTotals[type] += assetGroups[type][cat].total;
+      });
+      totalAssets += assetTypeTotals[type];
+    });
+
+    let totalLiabilities = 0;
+    const liabilityTypeTotals = {};
+    Object.keys(liabilityGroups).forEach(type => {
+      liabilityTypeTotals[type] = liabilityGroups[type].total;
+      totalLiabilities += liabilityTypeTotals[type];
+    });
+
+    const netAssets = totalAssets - totalLiabilities;
+
+    return {
+      assetGroups,
+      assetTypeTotals,
+      totalAssets,
+      liabilityGroups,
+      liabilityTypeTotals,
+      totalLiabilities,
+      netAssets,
+      typeNames,
+      year
+    };
+  },
+
   renderReports() {
     const main = document.getElementById('main-content');
-    const totalAssets = this.getTotalAssets('all');
-    const totalLiabilities = this.getTotalLiabilities();
-    const netAssets = totalAssets - totalLiabilities;
-    
+    const year = this.data.settings.currentYear;
+    const bs = this.getBalanceSheetData(year);
+
+    const typeOrder = ['selfUse', 'investment', 'financial'];
+    const liabilityTypeOrder = ['bank', 'nonBank', 'private'];
+
+    const renderAssetSection = () => {
+      return typeOrder.map(type => {
+        const categories = bs.assetGroups[type];
+        if (!categories) return '';
+        const typeTotal = bs.assetTypeTotals[type] || 0;
+        const typeName = bs.typeNames[type] || type;
+        const typeEmoji = type === 'selfUse' ? '🏠' : type === 'investment' ? '🏢' : '💎';
+
+        const catRows = Object.keys(categories).map(catKey => {
+          const cat = categories[catKey];
+          return `
+            <div class="bs-row bs-sub-row">
+              <span class="bs-name">${cat.name}</span>
+              <span class="bs-value">¥ ${this.formatMoney(cat.total)} 万</span>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="bs-section" data-type="${type}">
+            <div class="bs-section-header" onclick="App.toggleBsSection('asset-${type}')">
+              <span class="bs-section-title">${typeEmoji} ${typeName}</span>
+              <span class="bs-section-total">¥ ${this.formatMoney(typeTotal)} 万</span>
+              <span class="bs-chevron">▼</span>
+            </div>
+            <div class="bs-section-body" id="bs-asset-${type}">
+              ${catRows}
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+
+    const renderLiabilitySection = () => {
+      return liabilityTypeOrder.map(type => {
+        const group = bs.liabilityGroups[type];
+        if (!group) return '';
+        const typeTotal = bs.liabilityTypeTotals[type] || 0;
+        const typeName = group.name;
+        const typeEmoji = type === 'bank' ? '🏦' : type === 'nonBank' ? '🏛️' : '👤';
+
+        const itemRows = group.items.map(l => `
+          <div class="bs-row bs-sub-row">
+            <span class="bs-name">${l.creditor}</span>
+            <span class="bs-value negative">¥ ${this.formatMoney(l.borrowAmount)} 万</span>
+          </div>
+        `).join('');
+
+        return `
+          <div class="bs-section" data-type="${type}">
+            <div class="bs-section-header" onclick="App.toggleBsSection('liability-${type}')">
+              <span class="bs-section-title">${typeEmoji} ${typeName}</span>
+              <span class="bs-section-total negative">¥ ${this.formatMoney(typeTotal)} 万</span>
+              <span class="bs-chevron">▼</span>
+            </div>
+            <div class="bs-section-body" id="bs-liability-${type}">
+              ${itemRows}
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+
     main.innerHTML = `
+      <div class="page-title">📊 ${year} 年资产负债表</div>
+
       <div class="year-selector">
-        ${[2023,2024,2025,2026].map(y => `
-          <button class="year-btn ${y === this.data.settings.currentYear ? 'active' : ''}" 
+        ${[2023,2024,2025,2026,2027,2028,2029,2030].map(y => `
+          <button class="year-btn ${y === year ? 'active' : ''}"
                   data-year="${y}">${y}</button>
         `).join('')}
       </div>
-      
-      <div class="card">
-        <div class="card-title">📊 资产负债表</div>
-        <div class="summary-row">
-          <span class="summary-label">资产合计</span>
-          <span class="summary-value positive">¥ ${this.formatMoney(totalAssets)} 万</span>
+
+      <!-- 资产部分 -->
+      <div class="card bs-card">
+        <div class="bs-card-header">
+          <span class="bs-card-title">💰 资产</span>
         </div>
-        <div class="summary-row">
-          <span class="summary-label">负债合计</span>
-          <span class="summary-value negative">¥ ${this.formatMoney(totalLiabilities)} 万</span>
+        ${renderAssetSection()}
+        <div class="bs-total-row">
+          <span class="bs-total-label">资产合计</span>
+          <span class="bs-total-value positive">¥ ${this.formatMoney(bs.totalAssets)} 万</span>
         </div>
-        <div class="summary-row" style="border-top: 2px solid var(--primary); margin-top: 8px; padding-top: 12px;">
-          <span class="summary-label" style="font-weight: 600;">净资产</span>
-          <span class="summary-value ${netAssets >= 0 ? 'positive' : 'negative'}" style="font-size: 16px;">
-            ¥ ${this.formatMoney(netAssets)} 万
+      </div>
+
+      <!-- 负债部分 -->
+      <div class="card bs-card">
+        <div class="bs-card-header">
+          <span class="bs-card-title">📋 负债</span>
+        </div>
+        ${renderLiabilitySection()}
+        <div class="bs-total-row">
+          <span class="bs-total-label">负债合计</span>
+          <span class="bs-total-value negative">¥ ${this.formatMoney(bs.totalLiabilities)} 万</span>
+        </div>
+      </div>
+
+      <!-- 净资产部分 -->
+      <div class="card bs-card bs-net-card">
+        <div class="bs-total-row net">
+          <span class="bs-total-label">📐 净资产</span>
+          <span class="bs-total-value ${bs.netAssets >= 0 ? 'positive' : 'negative'}">
+            ¥ ${this.formatMoney(bs.netAssets)} 万
           </span>
         </div>
+        <div class="bs-formula">
+          净资产 = 资产合计（¥ ${this.formatMoney(bs.totalAssets)} 万）
+                - 负债合计（¥ ${this.formatMoney(bs.totalLiabilities)} 万）
+        </div>
       </div>
-      
-      <div class="card">
-        <div class="card-title">🏠 资产构成</div>
-        <div class="summary-row">
-          <span class="summary-label">实物资产</span>
-          <span class="summary-value">¥ ${this.formatMoney(this.getTotalAssets('real'))} 万</span>
-        </div>
-        <div class="summary-row">
-          <span class="summary-label">金融资产</span>
-          <span class="summary-value">¥ ${this.formatMoney(this.getTotalAssets('financial'))} 万</span>
-        </div>
+
+      <div class="data-source-note">
+        💡 数据自动汇总自资产台账、负债台账
       </div>
     `;
-    
+
+    // Year selector events
     main.querySelectorAll('.year-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         this.data.settings.currentYear = parseInt(e.target.dataset.year);
@@ -313,6 +489,20 @@ const App = {
         this.renderReports();
       });
     });
+  },
+
+  toggleBsSection(id) {
+    const body = document.getElementById(`bs-${id}`);
+    const header = body.previousElementSibling;
+    const chevron = header.querySelector('.bs-chevron');
+    if (!body || !chevron) return;
+    if (body.classList.contains('collapsed')) {
+      body.classList.remove('collapsed');
+      chevron.textContent = '▼';
+    } else {
+      body.classList.add('collapsed');
+      chevron.textContent = '▶';
+    }
   },
   
   renderAllocation() {

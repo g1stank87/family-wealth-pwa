@@ -598,3 +598,176 @@ body {
 .init-status .initialized {
   color: var(--success);
 }
+
+/* F019: 资产负债表样式 */
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary);
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.bs-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.bs-card-header {
+  padding: 12px 16px;
+  background: var(--primary);
+  color: white;
+}
+
+.bs-card-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.bs-section {
+  border-bottom: 1px solid var(--border);
+}
+
+.bs-section:last-child {
+  border-bottom: none;
+}
+
+.bs-section-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.bs-section-header:active {
+  background: var(--bg);
+}
+
+.bs-section-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  flex: 1;
+}
+
+.bs-section-total {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-right: 8px;
+}
+
+.bs-section-total.negative {
+  color: var(--danger);
+}
+
+.bs-chevron {
+  font-size: 10px;
+  color: var(--text-light);
+  transition: transform 0.2s;
+}
+
+.bs-section-body {
+  background: var(--bg);
+  padding: 4px 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.bs-section-body.collapsed {
+  max-height: 0 !important;
+}
+
+.bs-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px 8px 28px;
+}
+
+.bs-sub-row {
+  padding: 6px 16px 6px 32px;
+}
+
+.bs-name {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.bs-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.bs-value.positive {
+  color: var(--success);
+}
+
+.bs-value.negative {
+  color: var(--danger);
+}
+
+.bs-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-top: 2px solid var(--primary);
+  background: var(--card-bg);
+}
+
+.bs-total-row.net {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  border-top: none;
+  padding: 18px 16px;
+}
+
+.bs-total-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.bs-total-row.net .bs-total-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+}
+
+.bs-total-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--success);
+}
+
+.bs-total-value.negative {
+  color: var(--danger);
+}
+
+.bs-total-row.net .bs-total-value {
+  color: var(--accent);
+  font-size: 18px;
+}
+
+.bs-formula {
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  text-align: center;
+  padding: 0 16px 14px 16px;
+  font-family: monospace;
+}
+
+.bs-net-card {
+  margin-top: 12px;
+}
+
+.data-source-note {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-light);
+  margin-top: 12px;
+  padding: 8px;
+}

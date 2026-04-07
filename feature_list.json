@@ -165,9 +165,10 @@
       "id": "F019",
       "category": "report",
       "priority": "P1",
-      "passes": false,
+      "passes": true,
       "title": "财务报表-资产负债表",
-      "description": "按年度展开：资产合计、负债合计、净资产，自动从台账汇总"
+      "description": "按年度展开：资产合计、负债合计、净资产，自动从台账汇总",
+      "completedDate": "2026-04-08"
     },
     {
       "id": "F020",
