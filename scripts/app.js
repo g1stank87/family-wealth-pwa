@@ -418,10 +418,14 @@ const App = {
                 onclick="App.switchReport('income')">
           📈 收益表
         </button>
+        <button class="report-tab ${reportType === 'compare' ? 'active' : ''}"
+                onclick="App.switchReport('compare')">
+          📊 对比
+        </button>
       </div>
 
       <div id="report-content">
-        ${reportType === 'balance' ? this.renderBalanceSheetHTML(year) : this.renderIncomeStatementHTML(year)}
+        ${reportType === 'balance' ? this.renderBalanceSheetHTML(year) : reportType === 'income' ? this.renderIncomeStatementHTML(year) : this.renderComparisonHTML()}
       </div>
     `;
 
@@ -559,6 +563,131 @@ const App = {
       <div class="data-source-note">💡 数据来自已初始化的资产/负债记录</div>
     `;
   },
+
+  renderComparisonHTML() {
+    const years = [2023, 2024, 2025, 2026];
+    const compData = years.map(y => ({
+      year: y,
+      bs: this.getBalanceSheetData(y),
+      is: this.getIncomeStatementData(y)
+    }));
+
+    const metrics = [
+      { key: 'totalAssets', label: '资产合计', bs: true, is: false, pos: 'positive' },
+      { key: 'totalLiabilities', label: '负债合计', bs: true, is: false, pos: 'negative' },
+      { key: 'netAssets', label: '净资产', bs: true, is: false, pos: 'neutral' },
+      { key: 'netIncome', label: '净收益', bs: false, is: true, pos: 'neutral' },
+      { key: 'totalHoldReturn', label: '持有收益', bs: false, is: true, pos: 'positive' },
+      { key: 'totalInterestExpense', label: '利息支出', bs: false, is: true, pos: 'negative' }
+    ];
+
+    const trendArrow = (current, prev) => {
+      if (current > prev) return '<span class="trend-up">↑</span>';
+      if (current < prev) return '<span class="trend-down">↓</span>';
+      return '<span class="trend-flat">−</span>';
+    };
+
+    const valueClass = (val, pos) => {
+      if (pos === 'neutral') return '';
+      if (pos === 'positive') return val >= 0 ? ' positive' : ' negative';
+      if (pos === 'negative') return val >= 0 ? ' positive' : ' negative';
+      return '';
+    };
+
+    const metricRow = (metric) => {
+      const cells = compData.map((d, i) => {
+        let val;
+        if (metric.bs) {
+          val = metric.key === 'totalAssets' ? d.bs.totalAssets :
+                metric.key === 'totalLiabilities' ? d.bs.totalLiabilities :
+                d.bs.netAssets;
+        } else {
+          val = metric.key === 'netIncome' ? d.is.netIncome :
+                metric.key === 'totalHoldReturn' ? d.is.totalHoldReturn :
+                d.is.totalInterestExpense;
+        }
+        const prevVal = i > 0 ? (metric.bs ?
+          (metric.key === 'totalAssets' ? compData[i-1].bs.totalAssets :
+           metric.key === 'totalLiabilities' ? compData[i-1].bs.totalLiabilities :
+           compData[i-1].bs.netAssets) :
+          (metric.key === 'netIncome' ? compData[i-1].is.netIncome :
+           metric.key === 'totalHoldReturn' ? compData[i-1].is.totalHoldReturn :
+           compData[i-1].is.totalInterestExpense)) : null;
+        const trend = prevVal !== null ? trendArrow(val, prevVal) : '';
+        const cls = valueClass(val, metric.pos);
+        return `<td class="comp-cell${cls}">¥ ${this.formatMoney(val)} 万 ${trend}</td>`;
+      }).join('');
+
+      return `<tr class="comp-row"><td class="comp-label">${metric.label}</td>${cells}</tr>`;
+    };
+
+    const yearHeaders = compData.map(d => `<th class="comp-year-header">${d.year}</th>`).join('');
+
+    return `
+      <div class="card comp-card">
+        <div class="card-title">📊 多年度对比（2023-2026）</div>
+        <div class="comp-table-wrapper">
+          <table class="comp-table">
+            <thead>
+              <tr>
+                <th class="comp-label-col"></th>
+                ${yearHeaders}
+              </tr>
+            </thead>
+            <tbody>
+              ${metrics.map(m => metricRow(m)).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card trend-summary">
+        <div class="card-title">📈 趋势分析</div>
+        ${years.map((y, i) => {
+          if (i === 0) return '';
+          const prev = compData[i-1];
+          const curr = compData[i];
+          const netAssetChange = curr.bs.netAssets - prev.bs.netAssets;
+          const netIncome = curr.is.netIncome;
+          const dir = netAssetChange >= 0 ? '↑' : '↓';
+          return `
+            <div class="trend-row">
+              <span class="trend-year">${prev.year} → ${y}</span>
+              <span class="trend-text">净资产 ${dir} ¥ ${this.formatMoney(Math.abs(netAssetChange))} 万</span>
+              <span class="trend-income ${netIncome >= 0 ? 'positive' : 'negative'}">净收益 ¥ ${this.formatMoney(netIncome)} 万</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      <div class="card growth-rate">
+        <div class="card-title">🏆 ${years[years.length-1]} 年增长率</div>
+        ${(() => {
+          const last = compData[compData.length-1];
+          const prev = compData[compData.length-2];
+          const assetGrowth = prev.bs.totalAssets > 0
+            ? ((last.bs.totalAssets - prev.bs.totalAssets) / prev.bs.totalAssets * 100).toFixed(1)
+            : '0.0';
+          const netAssetGrowth = prev.bs.netAssets > 0
+            ? ((last.bs.netAssets - prev.bs.netAssets) / prev.bs.netAssets * 100).toFixed(1)
+            : '0.0';
+          return `
+            <div class="growth-row">
+              <div class="growth-item">
+                <div class="growth-label">资产增长率</div>
+                <div class="growth-value">${assetGrowth}%</div>
+              </div>
+              <div class="growth-item">
+                <div class="growth-label">净资产增长率</div>
+                <div class="growth-value ${parseFloat(netAssetGrowth) >= 0 ? 'positive' : 'negative'}">${netAssetGrowth}%</div>
+              </div>
+            </div>
+          `;
+        })()}
+      </div>
+    `;
+  },
+
   toggleBsSection(id) {
     const body = document.getElementById(`bs-${id}`);
     const header = body.previousElementSibling;

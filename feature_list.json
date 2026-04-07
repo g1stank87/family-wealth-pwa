@@ -183,9 +183,10 @@
       "id": "F021",
       "category": "report",
       "priority": "P2",
-      "passes": false,
+      "passes": true,
       "title": "多年度对比视图",
-      "description": "2023-2026 年度数据并排对比，趋势分析"
+      "description": "2023-2026 年度数据并排对比，趋势分析",
+      "completedDate": "2026-04-08"
     },
     {
       "id": "F022",

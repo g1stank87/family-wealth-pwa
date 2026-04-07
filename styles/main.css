@@ -927,3 +927,153 @@ body {
   background: rgba(229, 62, 62, 0.15);
   color: var(--danger);
 }
+
+/* F021: 多年度对比样式 */
+.comp-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.comp-table-wrapper {
+  overflow-x: auto;
+}
+
+.comp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 600px;
+}
+
+.comp-year-header {
+  padding: 10px 8px;
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+  font-size: 13px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.comp-label-col {
+  width: 90px;
+}
+
+.comp-label {
+  padding: 10px 12px;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--bg);
+  white-space: nowrap;
+}
+
+.comp-cell {
+  padding: 10px 8px;
+  text-align: right;
+  font-weight: 500;
+  font-family: monospace;
+  white-space: nowrap;
+}
+
+.comp-cell.positive {
+  color: var(--success);
+}
+
+.comp-cell.negative {
+  color: var(--danger);
+}
+
+.comp-row:hover {
+  background: var(--bg);
+}
+
+.trend-summary {
+  margin-top: 12px;
+}
+
+.trend-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.trend-row:last-child {
+  border-bottom: none;
+}
+
+.trend-year {
+  font-weight: 600;
+  color: var(--primary);
+  min-width: 70px;
+}
+
+.trend-text {
+  flex: 1;
+  color: var(--text);
+}
+
+.trend-income {
+  font-weight: 500;
+}
+
+.trend-income.positive {
+  color: var(--success);
+}
+
+.trend-income.negative {
+  color: var(--danger);
+}
+
+.trend-up {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.trend-down {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.trend-flat {
+  color: var(--text-light);
+}
+
+.growth-rate {
+  margin-top: 12px;
+}
+
+.growth-row {
+  display: flex;
+  gap: 16px;
+}
+
+.growth-item {
+  flex: 1;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+
+.growth-label {
+  font-size: 12px;
+  color: var(--text-light);
+  margin-bottom: 6px;
+}
+
+.growth-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.growth-value.positive {
+  color: var(--success);
+}
+
+.growth-value.negative {
+  color: var(--danger);
+}
