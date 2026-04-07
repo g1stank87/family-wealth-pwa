@@ -178,6 +178,10 @@ const App = {
         </div>
       </div>
       
+      <div class="export-bar">
+        <button class="btn btn-secondary" onclick="App.exportToExcel()">📥 导出 Excel</button>
+        <button class="btn btn-secondary" onclick="App.showImportExcel()">📤 导入 Excel</button>
+      </div>
       <button class="fab" onclick="App.showAssetForm()">+</button>
     `;
     
@@ -1657,5 +1661,239 @@ const App = {
       DataLayer.save(this.data);
     }
     this.renderLiabilities();
+  },
+
+  // ========== F027: Excel Export ==========
+  exportToExcel() {
+    const data = this.data;
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
+    // Sheet 1: 资产台账
+    const assetHeaders = ['编号', '大类', '分类', '城市', '名称', '买入年份', '买入单价(万)', '面积/数量', '买入总价(万)', '已初始化', '历史成本(万)', '累计持有收益(万)', '累计处置收益(万)', '累计使用率'];
+    const assetRows = data.assets.map(a => [
+      a.id, a.type, a.category, a.city || '', a.name,
+      a.buyYear, a.buyPricePerSqm || '', a.area || '', a.buyTotalPrice || 0,
+      a.initialized ? '是' : '否',
+      a.initData ? (a.initData.initTotalPrice || '') : '',
+      a.initData ? (a.initData.cumulativeHoldReturn || '') : '',
+      a.initData ? (a.initData.cumulativeDisposeReturn || '') : '',
+      a.initData ? (a.initData.cumulativeUtilizationRate || '') : ''
+    ]);
+
+    // Sheet 2: 负债台账
+    const liabHeaders = ['编号', '大类', '债权人', '借入年份', '年利率(%)', '借入金额(万)', '剩余期限(月)', '已初始化', '初始本金(万)', '累计未付利息(万)', '累计已付利息(万)'];
+    const liabRows = data.liabilities.map(l => [
+      l.id, l.type, l.creditor, l.buyYear,
+      l.interestRate ? (l.interestRate * 100).toFixed(2) : '',
+      l.borrowAmount || 0, l.remainingMonths || '',
+      l.initialized ? '是' : '否',
+      l.initData ? (l.initData.initBorrowAmount || '') : '',
+      l.initData ? (l.initData.cumulativeUnpaidInterest || '') : '',
+      l.initData ? (l.initData.cumulativePaidInterest || '') : ''
+    ]);
+
+    // Sheet 3: 配置参数
+    const settingsRows = [
+      ['参数名', '参数值'],
+      ['基准年份', data.settings.baseYear],
+      ['当前选中年份', data.settings.currentYear],
+      ['自用资产目标比例', data.settings.targetAllocation ? (data.settings.targetAllocation.selfUse * 100).toFixed(1) + '%' : ''],
+      ['投资资产目标比例', data.settings.targetAllocation ? (data.settings.targetAllocation.investment * 100).toFixed(1) + '%' : ''],
+      ['实物资产目标比例', data.settings.targetAllocation ? (data.settings.targetAllocation.realAsset * 100).toFixed(1) + '%' : ''],
+      ['金融资产目标比例', data.settings.targetAllocation ? (data.settings.targetAllocation.financial * 100).toFixed(1) + '%' : '']
+    ];
+
+    const ws1 = XLSX.utils.aoa_to_sheet([assetHeaders, ...assetRows]);
+    const ws2 = XLSX.utils.aoa_to_sheet([liabHeaders, ...liabRows]);
+    const ws3 = XLSX.utils.aoa_to_sheet(settingsRows);
+
+    // Set column widths
+    ws1['!cols'] = [{wch:8},{wch:10},{wch:15},{wch:8},{wch:15},{wch:8},{wch:10},{wch:8},{wch:12},{wch:8},{wch:12},{wch:12},{wch:12},{wch:10}];
+    ws2['!cols'] = [{wch:8},{wch:10},{wch:15},{wch:8},{wch:10},{wch:12},{wch:10},{wch:8},{wch:12},{wch:12},{wch:12}];
+    ws3['!cols'] = [{wch:20},{wch:15}];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws1, '资产台账');
+    XLSX.utils.book_append_sheet(wb, ws2, '负债台账');
+    XLSX.utils.book_append_sheet(wb, ws3, '配置参数');
+
+    const filename = `家庭资产负债_${today}.xlsx`;
+    XLSX.writeFile(wb, filename);
+  },
+
+  // ========== F031: Excel Import ==========
+  showImportExcel() {
+    const main = document.getElementById('main-content');
+    main.innerHTML = `
+      <div class="form-header">
+        <button class="btn-back" onclick="App.renderAssets()">← 返回</button>
+        <h2>📤 导入 Excel 数据</h2>
+      </div>
+
+      <div class="card form-card">
+        <div class="form-hint-banner">
+          请选择之前导出的 Excel 文件（.xlsx格式）。导入将追加或覆盖现有数据。
+        </div>
+
+        <form onsubmit="App.importFromExcel(event)">
+          <div class="form-group">
+            <label class="form-label">选择 Excel 文件</label>
+            <input type="file" id="importFile" accept=".xlsx,.xls" class="form-input" required>
+          </div>
+
+          <div class="import-options">
+            <div class="form-group">
+              <label class="form-label">
+                <input type="checkbox" id="importModeMerge" checked>
+                合并模式（追加新记录，保留现有数据）
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="form-label">
+                <input type="checkbox" id="importModeReplace">
+                替换模式（清空现有数据，用导入数据替代）
+              </label>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="App.renderAssets()">取消</button>
+            <button type="submit" class="btn btn-primary">导入</button>
+          </div>
+        </form>
+
+        <div class="import-preview" id="importPreview"></div>
+      </div>
+    `;
+
+    // Preview on file select
+    document.getElementById('importFile').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const preview = document.getElementById('importPreview');
+      preview.innerHTML = '<div class="loading">正在读取文件...</div>';
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, {type: 'array'});
+
+        let html = '<div class="import-sheet-list">';
+        workbook.SheetNames.forEach(name => {
+          const sheet = workbook.Sheets[name];
+          const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+          const rowCount = range.e.r + 1;
+          html += `<div class="import-sheet-item"><strong>${name}</strong>：${rowCount} 行数据</div>`;
+        });
+        html += '</div>';
+        preview.innerHTML = html;
+      } catch(err) {
+        preview.innerHTML = `<div class="import-error">读取失败：${err.message}</div>`;
+      }
+    });
+
+    // Mutually exclusive checkboxes
+    const mergeChk = document.getElementById('importModeMerge');
+    const replaceChk = document.getElementById('importModeReplace');
+    mergeChk.addEventListener('change', () => { if(mergeChk.checked) replaceChk.checked = false; });
+    replaceChk.addEventListener('change', () => { if(replaceChk.checked) mergeChk.checked = false; });
+  },
+
+  importFromExcel(event) {
+    event.preventDefault();
+    const file = document.getElementById('importFile').files[0];
+    if (!file) { alert('请选择文件'); return; }
+
+    const replaceMode = document.getElementById('importModeReplace').checked;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+
+        // Find asset sheet
+        const assetSheetName = workbook.SheetNames.find(n => n.includes('资产')) || '资产台账';
+        const liabSheetName = workbook.SheetNames.find(n => n.includes('负债')) || '负债台账';
+        const settingsSheetName = workbook.SheetNames.find(n => n.includes('配置')) || '配置参数';
+
+        const parseSheet = (sheetName) => {
+          const sheet = workbook.Sheets[sheetName];
+          if (!sheet) return [];
+          const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+          const rows = [];
+          for (let r = 1; r <= range.e.r; r++) { // skip header row
+            const row = [];
+            for (let c = 0; c <= range.e.c; c++) {
+              const cell = sheet[XLSX.utils.encode_cell({r, c})];
+              row.push(cell ? (cell.v || '') : '');
+            }
+            rows.push(row);
+          }
+          return rows;
+        };
+
+        const assetRows = parseSheet(assetSheetName);
+        const liabRows = parseSheet(liabSheetName);
+
+        // Parse assets
+        const newAssets = assetRows
+          .filter(r => r[4]) // has name
+          .map((r, i) => ({
+            id: r[0] || ('A' + String(this.data.assets.length + i + 1).padStart(3, '0')),
+            type: r[1] || 'financial',
+            category: r[2] || 'other',
+            city: r[3] || '',
+            name: r[4] || '',
+            buyYear: parseInt(r[5]) || new Date().getFullYear(),
+            buyPricePerSqm: parseFloat(r[6]) || 0,
+            area: parseFloat(r[7]) || 0,
+            buyTotalPrice: parseFloat(r[8]) || 0,
+            initialized: r[9] === '是',
+            initData: (r[10] || r[11] || r[12] || r[13]) ? {
+              initTotalPrice: parseFloat(r[10]) || 0,
+              cumulativeHoldReturn: parseFloat(r[11]) || 0,
+              cumulativeDisposeReturn: parseFloat(r[12]) || 0,
+              cumulativeUtilizationRate: parseFloat(r[13]) || 0
+            } : null
+          }));
+
+        // Parse liabilities
+        const newLiabs = liabRows
+          .filter(r => r[2]) // has creditor
+          .map((r, i) => ({
+            id: r[0] || ('L' + String(this.data.liabilities.length + i + 1).padStart(3, '0')),
+            type: r[1] || 'bank',
+            creditor: r[2] || '',
+            buyYear: parseInt(r[3]) || new Date().getFullYear(),
+            interestRate: parseFloat(r[4]) ? parseFloat(r[4]) / 100 : (parseFloat(r[4]) || 0),
+            borrowAmount: parseFloat(r[5]) || 0,
+            remainingMonths: parseInt(r[6]) || 0,
+            initialized: r[7] === '是',
+            initData: (r[8] || r[9] || r[10]) ? {
+              initBorrowAmount: parseFloat(r[8]) || 0,
+              cumulativeUnpaidInterest: parseFloat(r[9]) || 0,
+              cumulativePaidInterest: parseFloat(r[10]) || 0
+            } : null
+          }));
+
+        if (replaceMode) {
+          this.data.assets = newAssets;
+          this.data.liabilities = newLiabs;
+        } else {
+          // Merge: add new assets (skip if id already exists)
+          const existingAssetIds = new Set(this.data.assets.map(a => a.id));
+          const existingLiabIds = new Set(this.data.liabilities.map(l => l.id));
+          newAssets.forEach(a => { if (!existingAssetIds.has(a.id)) this.data.assets.push(a); });
+          newLiabs.forEach(l => { if (!existingLiabIds.has(l.id)) this.data.liabilities.push(l); });
+        }
+
+        DataLayer.save(this.data);
+        alert(`导入成功！\n新增资产：${newAssets.length} 条\n新增负债：${newLiabs.length} 条`);
+        this.renderAssets();
+      } catch(err) {
+        alert('导入失败：' + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
   }
 };

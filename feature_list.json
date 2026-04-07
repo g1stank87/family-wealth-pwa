@@ -237,9 +237,10 @@
       "id": "F027",
       "category": "export",
       "priority": "P2",
-      "passes": false,
+      "passes": true,
       "title": "数据导出 Excel",
-      "description": "使用 minimax-xlsx skill 导出完整报表为 Excel"
+      "description": "使用 minimax-xlsx skill 导出完整报表为 Excel",
+      "completedDate": "2026-04-08"
     },
     {
       "id": "F028",
@@ -269,9 +270,10 @@
       "id": "F031",
       "category": "data",
       "priority": "P2",
-      "passes": false,
+      "passes": true,
       "title": "数据导入-从 Excel",
-      "description": "解析 Excel 文件导入资产/负债台账数据"
+      "description": "解析 Excel 文件导入资产/负债台账数据",
+      "completedDate": "2026-04-08"
     },
     {
       "id": "F032",
