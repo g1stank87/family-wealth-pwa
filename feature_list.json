@@ -192,9 +192,10 @@
       "id": "F022",
       "category": "allocation",
       "priority": "P1",
-      "passes": false,
+      "passes": true,
       "title": "配置比例看板",
-      "description": "饼图展示：自用性 vs 投资性、实物 vs 金融，与目标比例对比"
+      "description": "饼图展示：自用性 vs 投资性、实物 vs 金融，与目标比例对比",
+      "completedDate": "2026-04-08"
     },
     {
       "id": "F023",

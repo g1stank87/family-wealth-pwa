@@ -709,29 +709,127 @@ const App = {
     const investmentAssets = this.getTotalAssets('investment');
     const realAssets = this.getTotalAssets('real');
     const financialAssets = this.getTotalAssets('financial');
-    
+
+    const selfUsePct = totalAssets > 0 ? (selfUseAssets / totalAssets * 100) : 0;
+    const investPct = totalAssets > 0 ? (investmentAssets / totalAssets * 100) : 0;
+    const realPct = totalAssets > 0 ? (realAssets / totalAssets * 100) : 0;
+    const finPct = totalAssets > 0 ? (financialAssets / totalAssets * 100) : 0;
+
+    // Target allocation
+    const targets = this.data.settings.targetAllocation || {
+      selfUse: 0.1, investment: 0.9, realAsset: 0.225, financial: 0.775
+    };
+    const targetSelfUse = targets.selfUse * 100;
+    const targetInvest = targets.investment * 100;
+    const targetReal = targets.realAsset * 100;
+    const targetFin = targets.financial * 100;
+
+    // Check deviations
+    const selfUseDev = Math.abs(selfUsePct - targetSelfUse);
+    const investDev = Math.abs(investPct - targetInvest);
+    const realDev = Math.abs(realPct - targetReal);
+    const finDev = Math.abs(finPct - targetFin);
+    const devThreshold = 10; // 偏离超过10%警告
+
+    // SVG donut chart helper
+    const makeDonut = (pct1, color1, color2, label1, label2, val1, val2) => {
+      const r = 60, circ = 2 * Math.PI * r;
+      const dash1 = (pct1 / 100) * circ;
+      const dash2 = ((100 - pct1) / 100) * circ;
+      return `
+        <div class="donut-wrapper">
+          <svg class="donut" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="${r}" fill="none" stroke="${color2}" stroke-width="24"/>
+            <circle cx="80" cy="80" r="${r}" fill="none" stroke="${color1}" stroke-width="24"
+              stroke-dasharray="${dash1} ${dash2}" stroke-dashoffset="${circ * 0.25}"
+              style="transition: stroke-dasharray 0.5s ease"/>
+          </svg>
+          <div class="donut-center">
+            <div class="donut-pct">${pct1.toFixed(1)}%</div>
+            <div class="donut-label">${label1}</div>
+          </div>
+        </div>
+        <div class="donut-legend">
+          <div class="donut-legend-item">
+            <span class="donut-dot" style="background:${color1}"></span>
+            <span class="donut-legend-label">${label1}</span>
+            <span class="donut-legend-val">¥ ${this.formatMoney(val1)} 万</span>
+          </div>
+          <div class="donut-legend-item">
+            <span class="donut-dot" style="background:${color2}"></span>
+            <span class="donut-legend-label">${label2}</span>
+            <span class="donut-legend-val">¥ ${this.formatMoney(val2)} 万</span>
+          </div>
+        </div>
+      `;
+    };
+
+    const deviationBadge = (dev) => {
+      if (dev > devThreshold) return '<span class="dev-warn">⚠️ 偏离</span>';
+      if (dev > devThreshold / 2) return '<span class="dev-note">🟡 轻微偏离</span>';
+      return '<span class="dev-ok">✅ 达标</span>';
+    };
+
     main.innerHTML = `
-      <div class="card">
-        <div class="card-title">📈 资产配置（当前 vs 目标）</div>
-        
-        <div class="summary-row">
-          <span class="summary-label">自用性 vs 投资性</span>
-          <span class="summary-value">${totalAssets > 0 ? ((selfUseAssets/totalAssets)*100).toFixed(1) : 0}% / ${totalAssets > 0 ? ((investmentAssets/totalAssets)*100).toFixed(1) : 0}%</span>
+      <div class="page-title">📈 资产配置看板</div>
+
+      <div class="card donut-card">
+        <div class="card-title">🏠 自用性 vs 投资性</div>
+        <div class="donut-row">
+          ${makeDonut(selfUsePct, '#1a365d', '#d69e2e', '自用', '投资', selfUseAssets, investmentAssets)}
         </div>
-        <div class="summary-row">
-          <span class="summary-label" style="padding-left: 16px; color: var(--text-light);">目标</span>
-          <span class="summary-value" style="color: var(--text-light);">10% / 90%</span>
-        </div>
-        
-        <div class="summary-row" style="margin-top: 12px;">
-          <span class="summary-label">实物 vs 金融</span>
-          <span class="summary-value">${totalAssets > 0 ? ((realAssets/totalAssets)*100).toFixed(1) : 0}% / ${totalAssets > 0 ? ((financialAssets/totalAssets)*100).toFixed(1) : 0}%</span>
-        </div>
-        <div class="summary-row">
-          <span class="summary-label" style="padding-left: 16px; color: var(--text-light);">目标</span>
-          <span class="summary-value" style="color: var(--text-light);">22.5% / 77.5%</span>
+        <div class="dev-row">
+          <div class="dev-label">当前</div>
+          <div class="dev-target">
+            <span>${selfUsePct.toFixed(1)}% / ${investPct.toFixed(1)}%</span>
+            ${deviationBadge(Math.max(selfUseDev, investDev))}
+          </div>
+          <div class="dev-label">目标</div>
+          <div class="dev-target">${targetSelfUse.toFixed(1)}% / ${targetInvest.toFixed(1)}%</div>
         </div>
       </div>
+
+      <div class="card donut-card">
+        <div class="card-title">🏗️ 实物 vs 金融资产</div>
+        <div class="donut-row">
+          ${makeDonut(realPct, '#2c5282', '#38a169', '实物', '金融', realAssets, financialAssets)}
+        </div>
+        <div class="dev-row">
+          <div class="dev-label">当前</div>
+          <div class="dev-target">
+            <span>${realPct.toFixed(1)}% / ${finPct.toFixed(1)}%</span>
+            ${deviationBadge(Math.max(realDev, finDev))}
+          </div>
+          <div class="dev-label">目标</div>
+          <div class="dev-target">${targetReal.toFixed(1)}% / ${targetFin.toFixed(1)}%</div>
+        </div>
+      </div>
+
+      <div class="card summary-card">
+        <div class="card-title">📊 配置总览</div>
+        <div class="alloc-summary-row">
+          <span class="alloc-label">总资产</span>
+          <span class="alloc-value">¥ ${this.formatMoney(totalAssets)} 万</span>
+        </div>
+        <div class="alloc-summary-row">
+          <span class="alloc-label">自用资产</span>
+          <span class="alloc-value">¥ ${this.formatMoney(selfUseAssets)} 万 (${selfUsePct.toFixed(1)}%)</span>
+        </div>
+        <div class="alloc-summary-row">
+          <span class="alloc-label">投资资产</span>
+          <span class="alloc-value">¥ ${this.formatMoney(investmentAssets)} 万 (${investPct.toFixed(1)}%)</span>
+        </div>
+        <div class="alloc-summary-row">
+          <span class="alloc-label">实物资产</span>
+          <span class="alloc-value">¥ ${this.formatMoney(realAssets)} 万 (${realPct.toFixed(1)}%)</span>
+        </div>
+        <div class="alloc-summary-row">
+          <span class="alloc-label">金融资产</span>
+          <span class="alloc-value">¥ ${this.formatMoney(financialAssets)} 万 (${finPct.toFixed(1)}%)</span>
+        </div>
+      </div>
+
+      <div class="data-source-note">💡 点击右上角 ⚙️ 可配置目标比例</div>
     `;
   },
   
