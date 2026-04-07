@@ -1365,7 +1365,16 @@ body {
   color: var(--text);
 }
 
-.trend-line-dot {
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.report-header .page-title {
+  margin-bottom: 0;
+}
   width: 8px;
   height: 8px;
   border-radius: 50%;

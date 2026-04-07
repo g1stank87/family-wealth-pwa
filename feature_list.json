@@ -246,9 +246,10 @@
       "id": "F028",
       "category": "export",
       "priority": "P3",
-      "passes": false,
+      "passes": true,
       "title": "数据导出 PDF",
-      "description": "使用 minimax-pdf skill 导出财务报表为 PDF"
+      "description": "使用 minimax-pdf skill 导出财务报表为 PDF",
+      "completedDate": "2026-04-08"
     },
     {
       "id": "F029",

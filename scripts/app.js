@@ -404,7 +404,10 @@ const App = {
 
     // Tab switch header
     const html = `
-      <div class="page-title">📊 ${year} 年财务报表</div>
+      <div class="report-header">
+        <div class="page-title">📊 ${year} 年财务报表</div>
+        <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="App.exportToPDF()">📄 PDF导出</button>
+      </div>
 
       <div class="year-selector">
         ${[2023,2024,2025,2026,2027,2028,2029,2030].map(y => `
@@ -1719,6 +1722,178 @@ const App = {
 
     const filename = `家庭资产负债_${today}.xlsx`;
     XLSX.writeFile(wb, filename);
+  },
+
+  // ========== F028: PDF Export ==========
+  exportToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const pageW = 210, margin = 15, contentW = pageW - margin * 2;
+
+    const fmt = (num) => (num || 0).toLocaleString('zh-CN', { maximumFractionDigits: 0 });
+
+    // ===== Page 1: 资产负债表 =====
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('家庭资产负债表', pageW / 2, 20, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`生成日期: ${today}`, pageW / 2, 27, { align: 'center' });
+
+    // Asset table
+    const bs = this.getBalanceSheetData(this.data.settings.currentYear);
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`💰 资产（${this.data.settings.currentYear}年）`, margin, 38);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+
+    const typeNames = { selfUse: '自用资产', investment: '投资资产', financial: '金融资产' };
+    const liabTypeNames = { bank: '银行负债', nonBank: '非银行负债', private: '私人负债' };
+
+    const assetData = [];
+    Object.keys(bs.assetGroups).forEach(type => {
+      const cats = bs.assetGroups[type];
+      Object.keys(cats).forEach(cat => {
+        cats[cat].items.forEach(a => {
+          assetData.push([typeNames[type] + ' - ' + cats[cat].name, a.name, '¥ ' + fmt(a.buyTotalPrice) + ' 万']);
+        });
+      });
+      // subtotal row
+      assetData.push([typeNames[type] + ' 小计', '', '¥ ' + fmt(bs.assetTypeTotals[type]) + ' 万']);
+    });
+    assetData.push(['资产合计', '', '¥ ' + fmt(bs.totalAssets) + ' 万']);
+
+    doc.autoTable({
+      startY: 40,
+      head: [['类别', '名称', '金额']],
+      body: assetData,
+      theme: 'striped',
+      headStyles: { fillColor: [26, 54, 93], fontSize: 9 },
+      bodyStyles: { fontSize: 8 },
+      columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 80 }, 2: { cellWidth: 40, halign: 'right' } },
+      margin: { left: margin, right: margin },
+    });
+
+    // Liability table
+    const nextY = doc.lastAutoTable.finalY + 8;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('📋 负债', margin, nextY);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+
+    const liabData = [];
+    Object.keys(bs.liabilityGroups).forEach(type => {
+      const group = bs.liabilityGroups[type];
+      group.items.forEach(l => {
+        liabData.push([liabTypeNames[type] || type, l.creditor, '¥ ' + fmt(l.borrowAmount) + ' 万']);
+      });
+      liabData.push([liabTypeNames[type] + ' 小计', '', '¥ ' + fmt(bs.liabilityTypeTotals[type]) + ' 万']);
+    });
+    liabData.push(['负债合计', '', '¥ ' + fmt(bs.totalLiabilities) + ' 万']);
+
+    doc.autoTable({
+      startY: nextY + 3,
+      head: [['类别', '债权人', '金额']],
+      body: liabData,
+      theme: 'striped',
+      headStyles: { fillColor: [229, 62, 62], fontSize: 9 },
+      bodyStyles: { fontSize: 8 },
+      columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 80 }, 2: { cellWidth: 40, halign: 'right' } },
+      margin: { left: margin, right: margin },
+    });
+
+    // Net assets
+    const netY = doc.lastAutoTable.finalY + 8;
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setFillColor(26, 54, 93);
+    doc.rect(margin, netY - 4, contentW, 10, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.text(`📐 净资产  ¥ ${fmt(bs.netAssets)} 万`, margin + 5, netY + 2);
+    doc.setTextColor(0, 0, 0);
+
+    // ===== Page 2: 收益表 =====
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('家庭收益表', pageW / 2, 20, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`年度: ${this.data.settings.currentYear}年`, pageW / 2, 27, { align: 'center' });
+
+    const is = this.getIncomeStatementData(this.data.settings.currentYear);
+
+    const incomeData = [
+      ['🏠 持有收益', `¥ ${fmt(is.totalHoldReturn)} 万`, '资产持有期间的价值增长+现金收益'],
+      ['🏦 处置收益', `¥ ${fmt(is.totalDisposeReturn)} 万`, '历史处置资产的已实现盈亏'],
+      ['📉 利息支出', `¥ ${fmt(is.totalInterestExpense)} 万`, '负债历年已付利息（累计值）'],
+    ];
+
+    doc.autoTable({
+      startY: 33,
+      head: [['指标', '金额', '说明']],
+      body: incomeData,
+      theme: 'striped',
+      headStyles: { fillColor: [44, 82, 130], fontSize: 9 },
+      bodyStyles: { fontSize: 9 },
+      columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 45, halign: 'right' }, 2: { cellWidth: 90 } },
+      margin: { left: margin, right: margin },
+    });
+
+    const incY = doc.lastAutoTable.finalY + 8;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setFillColor(26, 54, 93);
+    doc.rect(margin, incY - 4, contentW, 12, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.text(`📊 净收益  ¥ ${fmt(is.netIncome)} 万`, margin + 5, incY + 3);
+    doc.text(`= 持有收益 + 处置收益 - 利息支出`, margin + 5, incY + 8);
+    doc.setTextColor(0, 0, 0);
+
+    // ===== Page 3: 配置看板 =====
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('资产配置看板', pageW / 2, 20, { align: 'center' });
+
+    const totalAssets = this.getTotalAssets('all');
+    const selfUseAssets = this.getTotalAssets('selfUse');
+    const investmentAssets = this.getTotalAssets('investment');
+    const realAssets = this.getTotalAssets('real');
+    const financialAssets = this.getTotalAssets('financial');
+
+    const selfUsePct = totalAssets > 0 ? (selfUseAssets / totalAssets * 100) : 0;
+    const investPct = totalAssets > 0 ? (investmentAssets / totalAssets * 100) : 0;
+    const realPct = totalAssets > 0 ? (realAssets / totalAssets * 100) : 0;
+    const finPct = totalAssets > 0 ? (financialAssets / totalAssets * 100) : 0;
+
+    const targets = this.data.settings.targetAllocation || { selfUse: 0.1, investment: 0.9, realAsset: 0.225, financial: 0.775 };
+
+    const allocData = [
+      ['自用资产', `¥ ${fmt(selfUseAssets)} 万`, `${selfUsePct.toFixed(1)}%`, `${(targets.selfUse * 100).toFixed(1)}%`, selfUsePct > targets.selfUse * 100 * 1.15 || selfUsePct < targets.selfUse * 100 * 0.85 ? '⚠️' : '✅'],
+      ['投资资产', `¥ ${fmt(investmentAssets)} 万`, `${investPct.toFixed(1)}%`, `${(targets.investment * 100).toFixed(1)}%`, investPct > targets.investment * 100 * 1.15 || investPct < targets.investment * 100 * 0.85 ? '⚠️' : '✅'],
+      ['实物资产', `¥ ${fmt(realAssets)} 万`, `${realPct.toFixed(1)}%`, `${(targets.realAsset * 100).toFixed(1)}%`, realPct > targets.realAsset * 100 * 1.15 || realPct < targets.realAsset * 100 * 0.85 ? '⚠️' : '✅'],
+      ['金融资产', `¥ ${fmt(financialAssets)} 万`, `${finPct.toFixed(1)}%`, `${(targets.financial * 100).toFixed(1)}%`, finPct > targets.financial * 100 * 1.15 || finPct < targets.financial * 100 * 0.85 ? '⚠️' : '✅'],
+      ['资产合计', `¥ ${fmt(totalAssets)} 万`, '', '', ''],
+    ];
+
+    doc.autoTable({
+      startY: 28,
+      head: [['资产类别', '当前金额', '当前比例', '目标比例', '状态']],
+      body: allocData,
+      theme: 'striped',
+      headStyles: { fillColor: [44, 82, 130], fontSize: 9 },
+      bodyStyles: { fontSize: 9 },
+      columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 45, halign: 'right' }, 2: { cellWidth: 30, halign: 'right' }, 3: { cellWidth: 30, halign: 'right' }, 4: { cellWidth: 20, halign: 'center' } },
+      margin: { left: margin, right: margin },
+    });
+
+    const filename = `家庭资产负债报告_${today}.pdf`;
+    doc.save(filename);
   },
 
   // ========== F031: Excel Import ==========
