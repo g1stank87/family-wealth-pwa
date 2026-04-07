@@ -111,7 +111,7 @@ const App = {
         </div>
         <ul class="asset-list group-items" id="group-${group.type}-${group.category}">
           ${group.assets.map(asset => `
-            <li class="asset-item" onclick="App.showAssetDetail('${asset.id}')">
+            <li class="asset-item" onclick="App.showAssetForm('${asset.id}')">
               <div class="asset-info">
                 <div class="asset-name">${asset.name}</div>
                 <div class="asset-meta">${asset.city || ''} ${asset.area ? '· ' + asset.area + '㎡' : ''}</div>
@@ -186,12 +186,6 @@ const App = {
     }
   },
 
-  showAssetDetail(assetId) {
-    const asset = this.data.assets.find(a => a.id === assetId);
-    if (!asset) return;
-    alert(`资产详情: ${asset.name}\n类型: ${asset.type}\n城市: ${asset.city}\n买入价: ¥${this.formatMoney(asset.buyTotalPrice)}万\n面积: ${asset.area}㎡\n买入年份: ${asset.buyYear}`);
-  },
-  
   renderLiabilities() {
     const main = document.getElementById('main-content');
     const totalLiabilities = this.getTotalLiabilities();
@@ -368,18 +362,23 @@ const App = {
     return (num || 0).toLocaleString('zh-CN', { maximumFractionDigits: 0 });
   },
   
-  // ========== F006: 资产新增表单 ==========
+  // ========== F006/F007: 资产表单（新增+编辑） ==========
 
-  showAssetForm() {
+  showAssetForm(assetId) {
+    const isEditMode = !!assetId;
+    const asset = isEditMode ? this.data.assets.find(a => a.id === assetId) : null;
+    
     const main = document.getElementById('main-content');
     main.innerHTML = `
       <div class="form-header">
         <button class="btn-back" onclick="App.renderAssets()">← 返回</button>
-        <h2>新增资产</h2>
+        <h2>${isEditMode ? '编辑资产' : '新增资产'}</h2>
       </div>
       
       <div class="card form-card">
-        <form id="assetForm" onsubmit="App.saveAsset(event)">
+        <form id="assetForm" onsubmit="App.saveAsset(event, '${assetId || ''}')">
+          <input type="hidden" id="editAssetId" value="${assetId || ''}">
+          
           <div class="form-group">
             <label class="form-label">资产类型 *</label>
             <select class="form-input" id="assetType" required onchange="App.onTypeChange()">
@@ -410,7 +409,7 @@ const App = {
           <div class="form-group">
             <label class="form-label">买入年份 *</label>
             <input type="number" class="form-input" id="assetBuyYear" required 
-                   min="1990" max="2030" value="${new Date().getFullYear()}">
+                   min="1990" max="2030" value="${asset ? asset.buyYear : new Date().getFullYear()}">
           </div>
           
           <div class="form-row">
@@ -433,10 +432,17 @@ const App = {
             <small class="form-hint">单价×面积，或直接输入总价</small>
           </div>
           
+          ${isEditMode ? `
+          <div class="form-actions">
+            <button type="button" class="btn btn-danger" onclick="App.deleteAsset('${assetId}')">删除</button>
+            <button type="submit" class="btn btn-primary">保存</button>
+          </div>
+          ` : `
           <div class="form-actions">
             <button type="button" class="btn btn-secondary" onclick="App.renderAssets()">取消</button>
             <button type="submit" class="btn btn-primary">保存</button>
           </div>
+          `}
         </form>
       </div>
     `;
@@ -456,6 +462,29 @@ const App = {
     
     priceInput.addEventListener('input', calcTotal);
     areaInput.addEventListener('input', calcTotal);
+    
+    // If edit mode, load existing data
+    if (isEditMode && asset) {
+      this.loadAssetForEdit(asset);
+    }
+  },
+
+  loadAssetForEdit(asset) {
+    document.getElementById('assetType').value = asset.type || '';
+    document.getElementById('assetCity').value = asset.city || '';
+    document.getElementById('assetName').value = asset.name || '';
+    document.getElementById('assetBuyYear').value = asset.buyYear || new Date().getFullYear();
+    document.getElementById('assetPricePerSqm').value = asset.buyPricePerSqm || '';
+    document.getElementById('assetArea').value = asset.area || '';
+    document.getElementById('assetTotalPrice').value = asset.buyTotalPrice || '';
+    
+    // Trigger type change to populate categories
+    if (asset.type) {
+      this.onTypeChange();
+      setTimeout(() => {
+        document.getElementById('assetCategory').value = asset.category || '';
+      }, 50);
+    }
   },
 
   onTypeChange() {
@@ -493,9 +522,10 @@ const App = {
     }
   },
 
-  saveAsset(event) {
+  saveAsset(event, editAssetId) {
     event.preventDefault();
     
+    const editId = editAssetId || document.getElementById('editAssetId').value;
     const type = document.getElementById('assetType').value;
     const category = document.getElementById('assetCategory').value;
     const city = document.getElementById('assetCity').value.trim();
@@ -514,29 +544,53 @@ const App = {
       totalPrice = pricePerSqm * area;
     }
     
-    // Generate ID
-    const id = 'A' + String(this.data.assets.length + 1).padStart(3, '0');
+    if (editId) {
+      // Update existing asset
+      const index = this.data.assets.findIndex(a => a.id === editId);
+      if (index !== -1) {
+        this.data.assets[index] = {
+          ...this.data.assets[index],
+          type,
+          category: category || 'other',
+          city,
+          name,
+          buyYear,
+          buyPricePerSqm: pricePerSqm,
+          area,
+          buyTotalPrice: totalPrice
+        };
+      }
+    } else {
+      // Create new asset
+      const id = 'A' + String(this.data.assets.length + 1).padStart(3, '0');
+      const asset = {
+        id,
+        type,
+        category: category || 'other',
+        city,
+        name,
+        buyYear,
+        buyPricePerSqm: pricePerSqm,
+        area,
+        buyTotalPrice: totalPrice,
+        initialized: false,
+        initData: null
+      };
+      this.data.assets.push(asset);
+    }
     
-    // Create asset object
-    const asset = {
-      id,
-      type,
-      category: category || 'other',
-      city,
-      name,
-      buyYear,
-      buyPricePerSqm: pricePerSqm,
-      area,
-      buyTotalPrice: totalPrice,
-      initialized: false,
-      initData: null
-    };
-    
-    // Save
-    this.data.assets.push(asset);
     DataLayer.save(this.data);
+    this.renderAssets();
+  },
+
+  deleteAsset(assetId) {
+    if (!confirm('确定要删除这个资产吗？')) return;
     
-    // Return to list
+    const index = this.data.assets.findIndex(a => a.id === assetId);
+    if (index !== -1) {
+      this.data.assets.splice(index, 1);
+      DataLayer.save(this.data);
+    }
     this.renderAssets();
   },
   

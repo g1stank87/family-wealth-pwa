@@ -57,7 +57,8 @@
       "id": "F007",
       "category": "asset",
       "priority": "P1",
-      "passes": false,
+      "passes": true,
+      "completedDate": "2026-04-07",
       "title": "资产条目编辑",
       "description": "点击条目进入编辑页，支持所有字段修改"
     },
