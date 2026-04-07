@@ -84,7 +84,8 @@
       "id": "F010",
       "category": "asset",
       "priority": "P2",
-      "passes": false,
+      "passes": true,
+      "completedDate": "2026-04-07",
       "title": "资产类型扩展",
       "description": "支持：自用房产、自用车辆、自用其他、投资性住房、投资性股票/基金、金融资产（存款/债券/保险）"
     },

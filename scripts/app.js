@@ -45,8 +45,15 @@ const App = {
     const currentYear = this.data.settings.currentYear;
     
     const categoryNames = {
+      // 自用
       selfUseRealEstate: '自用房产',
+      selfUseVehicle: '自用车辆',
+      selfUseOther: '自用其他',
+      // 投资
       investmentRealEstate: '投资房产',
+      investmentStock: '投资股票',
+      investmentFund: '投资基金',
+      // 金融
       stock: '股票',
       fund: '基金',
       bond: '债券',
