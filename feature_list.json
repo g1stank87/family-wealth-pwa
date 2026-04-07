@@ -210,9 +210,10 @@
       "id": "F024",
       "category": "allocation",
       "priority": "P2",
-      "passes": false,
+      "passes": true,
       "title": "配置偏离预警",
-      "description": "实际配置偏离目标超过阈值时，显示预警提示"
+      "description": "实际配置偏离目标超过阈值时，显示预警提示",
+      "completedDate": "2026-04-08"
     },
     {
       "id": "F025",

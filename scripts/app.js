@@ -729,7 +729,34 @@ const App = {
     const investDev = Math.abs(investPct - targetInvest);
     const realDev = Math.abs(realPct - targetReal);
     const finDev = Math.abs(finPct - targetFin);
-    const devThreshold = 10; // 偏离超过10%警告
+    const maxDev = Math.max(selfUseDev, investDev, realDev, finDev);
+
+    // Deviation warning levels
+    const WARN_THRESHOLD = 15;
+    const CAUTION_THRESHOLD = 7.5;
+    let warningLevel = null;
+    let warningItems = [];
+    if (selfUseDev > WARN_THRESHOLD) { warningLevel = 'danger'; warningItems.push(`自用资产偏离 +${selfUseDev.toFixed(1)}%`); }
+    else if (selfUseDev > CAUTION_THRESHOLD) { warningLevel = warningLevel || 'caution'; warningItems.push(`自用资产偏离 +${selfUseDev.toFixed(1)}%`); }
+    if (investDev > WARN_THRESHOLD) { warningLevel = 'danger'; warningItems.push(`投资资产偏离 +${investDev.toFixed(1)}%`); }
+    else if (investDev > CAUTION_THRESHOLD) { warningLevel = warningLevel || 'caution'; warningItems.push(`投资资产偏离 +${investDev.toFixed(1)}%`); }
+    if (realDev > WARN_THRESHOLD) { warningLevel = 'danger'; warningItems.push(`实物资产偏离 +${realDev.toFixed(1)}%`); }
+    else if (realDev > CAUTION_THRESHOLD) { warningLevel = warningLevel || 'caution'; warningItems.push(`实物资产偏离 +${realDev.toFixed(1)}%`); }
+    if (finDev > WARN_THRESHOLD) { warningLevel = 'danger'; warningItems.push(`金融资产偏离 +${finDev.toFixed(1)}%`); }
+    else if (finDev > CAUTION_THRESHOLD) { warningLevel = warningLevel || 'caution'; warningItems.push(`金融资产偏离 +${finDev.toFixed(1)}%`); }
+
+    const warningBanner = warningLevel ? `
+      <div class="alloc-warning alloc-warning-${warningLevel}" id="allocWarning">
+        <div class="alloc-warning-content">
+          <div class="alloc-warning-icon">${warningLevel === 'danger' ? '🚨' : '⚠️'}</div>
+          <div class="alloc-warning-text">
+            <div class="alloc-warning-title">${warningLevel === 'danger' ? '配置严重偏离' : '配置轻微偏离'}</div>
+            <div class="alloc-warning-detail">${warningItems.join('、')}</div>
+          </div>
+        </div>
+        <button class="alloc-warning-close" onclick="App.dismissWarning()">×</button>
+      </div>
+    ` : '';
 
     // SVG donut chart helper
     const makeDonut = (pct1, color1, color2, label1, label2, val1, val2) => {
@@ -772,7 +799,7 @@ const App = {
 
     main.innerHTML = `
       <div class="page-title">📈 资产配置看板</div>
-
+      ${warningBanner}
       <div class="card donut-card">
         <div class="card-title">🏠 自用性 vs 投资性</div>
         <div class="donut-row">
@@ -833,6 +860,13 @@ const App = {
         <button class="btn btn-primary" onclick="App.showAllocationSettings()">⚙️ 设置目标</button>
       </div>
     `;
+  },
+
+  dismissWarning() {
+    const warn = document.getElementById('allocWarning');
+    if (warn) {
+      warn.style.display = 'none';
+    }
   },
 
   showAllocationSettings() {
