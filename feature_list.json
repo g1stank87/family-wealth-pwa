@@ -66,7 +66,8 @@
       "id": "F008",
       "category": "asset",
       "priority": "P1",
-      "passes": false,
+      "passes": true,
+      "completedDate": "2026-04-07",
       "title": "资产条目删除",
       "description": "滑动删除或长按删除，二次确认"
     },
