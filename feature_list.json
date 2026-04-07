@@ -111,7 +111,8 @@
       "id": "F013",
       "category": "liability",
       "priority": "P1",
-      "passes": false,
+      "passes": true,
+      "completedDate": "2026-04-07",
       "title": "负债台账列表页",
       "description": "按负债类型分组（银行负债、非银行负债、私人负债），显示汇总行"
     },

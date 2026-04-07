@@ -206,47 +206,50 @@ const App = {
 
   renderLiabilities() {
     const main = document.getElementById('main-content');
-    const totalLiabilities = this.getTotalLiabilities();
+    const groups = this.getGroupedLiabilities();
+    const grandTotal = this.getTotalLiabilities();
     
-    main.innerHTML = `
-      <div class="card">
-        <div class="section-header">
-          <span class="section-title">📋 负债总览</span>
-          <span class="section-total negative">¥ ${this.formatMoney(totalLiabilities)} 万</span>
+    const typeEmojis = {
+      bank: '🏦',
+      nonBank: '🏛️',
+      private: '👤'
+    };
+
+    const renderGroup = (group) => `
+      <div class="card liability-type-section">
+        <div class="type-header">
+          <span class="type-title">${typeEmojis[group.type] || '📋'} ${group.typeName}</span>
+          <span class="type-total negative">¥ ${this.formatMoney(group.total)} 万</span>
         </div>
-        
-        <div class="summary-row">
-          <span class="summary-label">银行负债</span>
-          <span class="summary-value negative">¥ ${this.formatMoney(this.getTotalLiabilitiesByType('bank'))} 万</span>
-        </div>
-        <div class="summary-row">
-          <span class="summary-label">非银行负债</span>
-          <span class="summary-value negative">¥ ${this.formatMoney(this.getTotalLiabilitiesByType('nonBank'))} 万</span>
-        </div>
-        <div class="summary-row">
-          <span class="summary-label">私人负债</span>
-          <span class="summary-value negative">¥ ${this.formatMoney(this.getTotalLiabilitiesByType('private'))} 万</span>
-        </div>
-      </div>
-      
-      <div class="card">
-        <div class="section-header">
-          <span class="section-title">🏦 银行负债</span>
-        </div>
-        <ul class="asset-list">
-          ${this.data.liabilities.filter(l => l.type === 'bank').map(liability => `
-            <li class="asset-item">
-              <div class="asset-info">
-                <div class="asset-name">${liability.creditor}</div>
-                <div class="asset-meta">利率 ${(liability.interestRate * 100).toFixed(1)}% · 剩余 ${liability.remainingMonths || '-'} 月</div>
+        <ul class="liability-list">
+          ${group.liabilities.map(liability => `
+            <li class="liability-item" onclick="App.showLiabilityForm('${liability.id}')">
+              <div class="liability-info">
+                <div class="liability-name">${liability.creditor}</div>
+                <div class="liability-meta">
+                  利率 ${(liability.interestRate * 100).toFixed(1)}% 
+                  ${liability.remainingMonths ? '· 剩余 ' + liability.remainingMonths + ' 月' : ''}
+                </div>
               </div>
-              <div class="asset-value negative">
+              <div class="liability-value negative">
                 <div>¥ ${this.formatMoney(liability.borrowAmount)} 万</div>
-                <div class="asset-meta">借入</div>
+                <div class="liability-meta">借入</div>
               </div>
             </li>
           `).join('')}
+          ${group.liabilities.length === 0 ? '<li class="empty-hint">暂无记录</li>' : ''}
         </ul>
+      </div>
+    `;
+
+    main.innerHTML = `
+      ${groups.map(g => renderGroup(g)).join('')}
+      
+      <div class="card grand-total-card">
+        <div class="grand-total">
+          <span class="grand-total-label">📊 负债总计</span>
+          <span class="grand-total-value negative">¥ ${this.formatMoney(grandTotal)} 万</span>
+        </div>
       </div>
       
       <button class="fab" onclick="App.showLiabilityForm()">+</button>
@@ -406,6 +409,39 @@ const App = {
       totalReturn,
       initialized: asset.initialized
     };
+  },
+
+  // ========== F013: 负债分组显示 ==========
+
+  getGroupedLiabilities() {
+    const typeNames = {
+      bank: '银行负债',
+      nonBank: '非银行负债',
+      private: '私人负债'
+    };
+
+    const groups = {};
+    this.data.liabilities.forEach(liability => {
+      const type = liability.type || 'bank';
+      if (!groups[type]) {
+        groups[type] = {
+          type,
+          typeName: typeNames[type] || type,
+          liabilities: [],
+          total: 0
+        };
+      }
+      groups[type].liabilities.push(liability);
+      groups[type].total += liability.borrowAmount || 0;
+    });
+
+    return Object.values(groups);
+  },
+
+  getTotalLiabilitiesByType(type) {
+    return this.data.liabilities
+      .filter(l => l.type === type)
+      .reduce((sum, l) => sum + (l.borrowAmount || 0), 0);
   },
   
   // ========== F006/F007: 资产表单（新增+编辑） ==========
