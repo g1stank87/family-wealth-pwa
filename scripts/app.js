@@ -1023,6 +1023,15 @@ const App = {
             <button type="submit" class="btn btn-primary">保存</button>
           </div>
         </form>
+
+        <div class="backup-section">
+          <div class="form-section-title">💾 数据备份与恢复</div>
+          <div class="backup-buttons">
+            <button class="btn btn-secondary" onclick="App.exportBackup()">📤 备份 JSON</button>
+            <button class="btn btn-secondary" onclick="App.showImportBackup()">📥 恢复 JSON</button>
+          </div>
+          <div id="backupPreview"></div>
+        </div>
       </div>
     `;
   },
@@ -2070,5 +2079,50 @@ const App = {
       }
     };
     reader.readAsArrayBuffer(file);
+  },
+
+  // ========== F032: JSON Backup/Restore ==========
+  exportBackup() {
+    const data = this.data;
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const backup = {
+      version: 1,
+      exportDate: today,
+      data: data
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `家庭资产负债备份_${today}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  showImportBackup() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const backup = JSON.parse(ev.target.result);
+          if (!backup.data) throw new Error('无效的备份文件');
+          const confirmed = confirm(`确定要恢复备份吗？\n备份日期：${backup.exportDate}\n这将覆盖所有现有数据。`);
+          if (!confirmed) return;
+          this.data = backup.data;
+          DataLayer.save(this.data);
+          alert('恢复成功！');
+          this.renderAllocation();
+        } catch(err) {
+          alert('恢复失败：' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
   }
 };

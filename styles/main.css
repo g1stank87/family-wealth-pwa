@@ -1445,6 +1445,22 @@ body {
   font-size: 13px;
 }
 
+/* F032: JSON Backup */
+.backup-section {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.backup-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.backup-buttons .btn {
+  flex: 1;
+}
+
 /* F026: 收益贡献分解 */
 .contrib-card {
   margin-top: 12px;

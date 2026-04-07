@@ -282,9 +282,10 @@
       "id": "F032",
       "category": "data",
       "priority": "P3",
-      "passes": false,
+      "passes": true,
       "title": "数据备份与恢复",
-      "description": "JSON 格式全量备份/恢复"
+      "description": "JSON 格式全量备份/恢复",
+      "completedDate": "2026-04-08"
     }
   ]
 }
