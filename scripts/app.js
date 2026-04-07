@@ -448,6 +448,35 @@ const App = {
           </div>
           
           ${isEditMode ? `
+          <div class="form-section-title">📋 初始化数据（历史成本基准）</div>
+          <div class="init-section">
+            <div class="form-group">
+              <label class="form-label">初始化总价（万元）</label>
+              <input type="number" class="form-input" id="initTotalPrice" 
+                     placeholder="历史成本基准" min="0" step="0.1">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">累计持有收益（万元）</label>
+                <input type="number" class="form-input" id="cumulativeHoldReturn" 
+                       placeholder="正值=盈利，负值=亏损" step="0.1">
+              </div>
+              <div class="form-group">
+                <label class="form-label">累计处置收益（万元）</label>
+                <input type="number" class="form-input" id="cumulativeDisposeReturn" 
+                       placeholder="处置时产生" step="0.1">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">累计使用率</label>
+              <input type="number" class="form-input" id="cumulativeUtilizationRate" 
+                     placeholder="0-1，如：0.5表示50%自用" min="0" max="1" step="0.1">
+            </div>
+            <div class="init-status">
+              <span id="initStatusText">${asset && asset.initialized ? '✅ 已初始化' : '❌ 未初始化'}</span>
+            </div>
+          </div>
+          
           <div class="form-actions">
             <button type="button" class="btn btn-danger" onclick="App.deleteAsset('${assetId}')">删除</button>
             <button type="submit" class="btn btn-primary">保存</button>
@@ -492,6 +521,14 @@ const App = {
     document.getElementById('assetPricePerSqm').value = asset.buyPricePerSqm || '';
     document.getElementById('assetArea').value = asset.area || '';
     document.getElementById('assetTotalPrice').value = asset.buyTotalPrice || '';
+    
+    // F011: Load initialization data
+    if (asset.initData) {
+      document.getElementById('initTotalPrice').value = asset.initData.initTotalPrice || '';
+      document.getElementById('cumulativeHoldReturn').value = asset.initData.cumulativeHoldReturn || '';
+      document.getElementById('cumulativeDisposeReturn').value = asset.initData.cumulativeDisposeReturn || '';
+      document.getElementById('cumulativeUtilizationRate').value = asset.initData.cumulativeUtilizationRate || '';
+    }
     
     // Trigger type change to populate categories
     if (asset.type) {
@@ -559,12 +596,21 @@ const App = {
       totalPrice = pricePerSqm * area;
     }
     
+    // F011: Get initialization data
+    const initTotalPrice = parseFloat(document.getElementById('initTotalPrice')?.value) || 0;
+    const cumulativeHoldReturn = parseFloat(document.getElementById('cumulativeHoldReturn')?.value) || 0;
+    const cumulativeDisposeReturn = parseFloat(document.getElementById('cumulativeDisposeReturn')?.value) || 0;
+    const cumulativeUtilizationRate = parseFloat(document.getElementById('cumulativeUtilizationRate')?.value) || 0;
+    
+    const hasInitData = initTotalPrice || cumulativeHoldReturn || cumulativeDisposeReturn || cumulativeUtilizationRate;
+    
     if (editId) {
       // Update existing asset
       const index = this.data.assets.findIndex(a => a.id === editId);
       if (index !== -1) {
+        const existingAsset = this.data.assets[index];
         this.data.assets[index] = {
-          ...this.data.assets[index],
+          ...existingAsset,
           type,
           category: category || 'other',
           city,
@@ -572,7 +618,15 @@ const App = {
           buyYear,
           buyPricePerSqm: pricePerSqm,
           area,
-          buyTotalPrice: totalPrice
+          buyTotalPrice: totalPrice,
+          // F011: Save initialization data
+          initialized: hasInitData,
+          initData: hasInitData ? {
+            initTotalPrice,
+            cumulativeHoldReturn,
+            cumulativeDisposeReturn,
+            cumulativeUtilizationRate
+          } : existingAsset.initData
         };
       }
     } else {

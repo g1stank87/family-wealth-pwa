@@ -93,7 +93,8 @@
       "id": "F011",
       "category": "asset",
       "priority": "P2",
-      "passes": false,
+      "passes": true,
+      "completedDate": "2026-04-07",
       "title": "资产初始化功能",
       "description": "设置历史成本、初始化累计收益，作为后续年度计算基准"
     },

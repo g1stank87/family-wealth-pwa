@@ -488,3 +488,30 @@ body {
   padding: 14px;
   font-size: 15px;
 }
+
+/* F011: 初始化数据区块 */
+.form-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  margin: 20px 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.init-section {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.init-status {
+  font-size: 12px;
+  margin-top: 8px;
+  color: var(--text-light);
+}
+
+.init-status .initialized {
+  color: var(--success);
+}
