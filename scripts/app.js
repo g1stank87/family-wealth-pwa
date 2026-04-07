@@ -792,9 +792,40 @@ const App = {
     };
 
     const deviationBadge = (dev) => {
-      if (dev > devThreshold) return '<span class="dev-warn">⚠️ 偏离</span>';
-      if (dev > devThreshold / 2) return '<span class="dev-note">🟡 轻微偏离</span>';
+      if (dev > WARN_THRESHOLD) return '<span class="dev-warn">⚠️ 偏离</span>';
+      if (dev > CAUTION_THRESHOLD) return '<span class="dev-note">🟡 轻微偏离</span>';
       return '<span class="dev-ok">✅ 达标</span>';
+    };
+
+    // F025: Trend chart data
+    const trendYears = [2023, 2024, 2025, 2026];
+    const trendData = trendYears.map(y => this.getBalanceSheetData(y));
+    const assetLine = trendData.map(d => d.totalAssets);
+    const liabLine = trendData.map(d => d.totalLiabilities);
+    const netLine = trendData.map(d => d.netAssets);
+
+    const chartW = 320, chartH = 160, padL = 10, padR = 10, padT = 10, padB = 30;
+    const plotW = chartW - padL - padR;
+    const plotH = chartH - padT - padB;
+    const allVals = [...assetLine, ...liabLine, ...netLine];
+    const maxVal = Math.max(...allVals.filter(v => v > 0), 1);
+    const minVal = Math.min(...allVals.filter(v => v < 0), 0);
+    const range = maxVal - minVal || 1;
+
+    const xPos = (i) => padL + (i / (trendYears.length - 1)) * plotW;
+    const yPos = (v) => padT + (1 - (v - minVal) / range) * plotH;
+
+    const buildPath = (vals) => vals.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xPos(i).toFixed(1)} ${yPos(v).toFixed(1)}`).join(' ');
+    const buildDots = (vals) => vals.map((v, i) => `<circle cx="${xPos(i).toFixed(1)}" cy="${yPos(v).toFixed(1)}" r="3" fill="currentColor"/>`).join('');
+
+    // F026: Income contribution data
+    const is = this.getIncomeStatementData(this.data.settings.currentYear);
+    const contribMax = Math.max(Math.abs(is.totalHoldReturn), Math.abs(is.totalDisposeReturn), Math.abs(is.totalInterestExpense), Math.abs(is.netIncome)) || 1;
+
+    const contribBar = (label, value, color, note) => {
+      const pct = Math.abs(value) / contribMax * 100;
+      const isNeg = value < 0;
+      return `<div class="contrib-row"><div class="contrib-label">${label}</div><div class="contrib-bar-wrapper"><div class="contrib-bar-bg"><div class="contrib-bar-fill ${isNeg ? 'fill-neg' : 'fill-pos'}" style="width:${pct.toFixed(1)}%; background:${color}; ${isNeg ? 'margin-left:auto' : ''}"></div></div><div class="contrib-val ${value >= 0 ? 'positive' : 'negative'}">¥ ${this.formatMoney(value)} 万 <span class="contrib-note">${note}</span></div></div></div>`;
     };
 
     main.innerHTML = `
@@ -853,6 +884,45 @@ const App = {
         <div class="alloc-summary-row">
           <span class="alloc-label">金融资产</span>
           <span class="alloc-value">¥ ${this.formatMoney(financialAssets)} 万 (${finPct.toFixed(1)}%)</span>
+        </div>
+      </div>
+
+      <!-- F025: 趋势图 -->
+      <div class="card trend-chart-card">
+        <div class="card-title">📈 净资产趋势（2023-2026）</div>
+        <div class="trend-chart-wrapper">
+          <svg class="trend-chart" viewBox="0 0 ${chartW} ${chartH}" preserveAspectRatio="xMidYMid meet">
+            ${[0, 0.25, 0.5, 0.75, 1].map(p => {
+              const y = padT + p * plotH;
+              const val = maxVal - p * range;
+              return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${chartW - padR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/><text x="${padL - 2}" y="${(y + 3).toFixed(1)}" font-size="9" fill="var(--text-light)" text-anchor="end">${this.formatMoney(val)}</text>`;
+            }).join('')}
+            <path d="${buildPath(assetLine)}" fill="none" stroke="#1a365d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="${buildPath(liabLine)}" fill="none" stroke="#e53e3e" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="${buildPath(netLine)}" fill="none" stroke="#38a169" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            <g style="color: #1a365d">${buildDots(assetLine)}</g>
+            <g style="color: #e53e3e">${buildDots(liabLine)}</g>
+            <g style="color: #38a169">${buildDots(netLine)}</g>
+            ${trendYears.map((y, i) => `<text x="${xPos(i).toFixed(1)}" y="${chartH - 6}" font-size="10" fill="var(--text-light)" text-anchor="middle">${y}</text>`).join('')}
+          </svg>
+        </div>
+        <div class="trend-legend">
+          <div class="trend-legend-item"><span class="trend-line-dot" style="background:#1a365d"></span>资产</div>
+          <div class="trend-legend-item"><span class="trend-line-dot" style="background:#e53e3e"></span>负债</div>
+          <div class="trend-legend-item"><span class="trend-line-dot" style="background:#38a169"></span>净资产</div>
+        </div>
+      </div>
+
+      <!-- F026: 收益贡献分解 -->
+      <div class="card contrib-card">
+        <div class="card-title">💡 ${this.data.settings.currentYear} 年收益贡献分解</div>
+        ${contribBar('🏠 持有收益', is.totalHoldReturn, '#2c5282', '资产持有期间价值增长')}
+        ${contribBar('🏦 处置收益', is.totalDisposeReturn, '#38a169', '历史处置已实现盈亏')}
+        ${contribBar('📉 利息支出', is.totalInterestExpense, '#e53e3e', '负债历年已付利息')}
+        <div class="contrib-divider"></div>
+        <div class="contrib-net ${is.netIncome >= 0 ? 'net-pos' : 'net-neg'}">
+          <span class="contrib-net-label">📊 净收益</span>
+          <span class="contrib-net-val">¥ ${this.formatMoney(is.netIncome)} 万</span>
         </div>
       </div>
 

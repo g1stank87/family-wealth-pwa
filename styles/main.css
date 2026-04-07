@@ -1332,3 +1332,143 @@ body {
   padding: 0 4px;
   line-height: 1;
 }
+
+/* F025: 资产趋势图表 */
+.trend-chart-card {
+  margin-top: 12px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.trend-chart-wrapper {
+  padding: 12px 16px 8px 16px;
+}
+
+.trend-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.trend-legend {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 0 16px 12px 16px;
+}
+
+.trend-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.trend-line-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* F026: 收益贡献分解 */
+.contrib-card {
+  margin-top: 12px;
+}
+
+.contrib-row {
+  margin-bottom: 12px;
+}
+
+.contrib-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.contrib-bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.contrib-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+}
+
+.contrib-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+  min-width: 2px;
+}
+
+.contrib-bar-fill.fill-pos {
+  background: var(--success) !important;
+}
+
+.contrib-bar-fill.fill-neg {
+  background: var(--danger) !important;
+}
+
+.contrib-val {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 120px;
+  text-align: right;
+}
+
+.contrib-val.positive {
+  color: var(--success);
+}
+
+.contrib-val.negative {
+  color: var(--danger);
+}
+
+.contrib-note {
+  font-weight: 400;
+  color: var(--text-light);
+  font-size: 11px;
+}
+
+.contrib-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 12px 0;
+}
+
+.contrib-net {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.contrib-net-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.contrib-net-val {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.contrib-net.net-pos .contrib-net-label,
+.contrib-net.net-pos .contrib-net-val {
+  color: var(--success);
+}
+
+.contrib-net.net-neg .contrib-net-label,
+.contrib-net.net-neg .contrib-net-val {
+  color: var(--danger);
+}

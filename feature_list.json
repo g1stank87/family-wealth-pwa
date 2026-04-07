@@ -219,17 +219,19 @@
       "id": "F025",
       "category": "visualization",
       "priority": "P2",
-      "passes": false,
+      "passes": true,
       "title": "资产趋势图表",
-      "description": "折线图展示资产总额、净资产历史趋势"
+      "description": "折线图展示资产总额、净资产历史趋势",
+      "completedDate": "2026-04-08"
     },
     {
       "id": "F026",
       "category": "visualization",
       "priority": "P2",
-      "passes": false,
+      "passes": true,
       "title": "收益贡献分解",
-      "description": "堆叠柱状图分解各类资产的收益贡献"
+      "description": "堆叠柱状图分解各类资产的收益贡献",
+      "completedDate": "2026-04-08"
     },
     {
       "id": "F027",
