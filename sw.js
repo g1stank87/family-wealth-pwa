@@ -1,4 +1,4 @@
-const CACHE_NAME = 'family-wealth-pwa-v1';
+const CACHE_NAME = 'family-wealth-pwa-v2';
 const ASSETS = [
   '/',
   '/index.html',
@@ -6,7 +6,9 @@ const ASSETS = [
   '/styles/main.css',
   '/scripts/data-layer.js',
   '/scripts/router.js',
-  '/scripts/app.js'
+  '/scripts/app.js',
+  '/assets/icons/icon-192.png',
+  '/assets/icons/icon-512.png'
 ];
 
 // 安装事件

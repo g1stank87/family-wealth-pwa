@@ -255,17 +255,19 @@
       "id": "F029",
       "category": "pwa",
       "priority": "P1",
-      "passes": false,
+      "passes": true,
       "title": "离线数据同步",
-      "description": "Service Worker 缓存 + LocalStorage，离线可用"
+      "description": "Service Worker 缓存 + LocalStorage，离线可用",
+      "completedDate": "2026-04-08"
     },
     {
       "id": "F030",
       "category": "pwa",
       "priority": "P2",
-      "passes": false,
+      "passes": true,
       "title": "PWA 图标生成",
-      "description": "使用 minimax-multimodal-toolkit 生成 App 图标和首屏插画"
+      "description": "使用 minimax-multimodal-toolkit 生成 App 图标和首屏插画",
+      "completedDate": "2026-04-08"
     },
     {
       "id": "F031",
