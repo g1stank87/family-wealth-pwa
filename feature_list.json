@@ -129,7 +129,8 @@
       "id": "F015",
       "category": "liability",
       "priority": "P1",
-      "passes": false,
+      "passes": true,
+      "completedDate": "2026-04-07",
       "title": "负债条目编辑",
       "description": "修改债权人、利率、期限等信息"
     },
@@ -137,7 +138,8 @@
       "id": "F016",
       "category": "liability",
       "priority": "P1",
-      "passes": false,
+      "passes": true,
+      "completedDate": "2026-04-07",
       "title": "负债条目删除",
       "description": "删除负债条目，二次确认"
     },
