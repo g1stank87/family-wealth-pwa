@@ -39,9 +39,11 @@ const App = {
     });
   },
   
-  // ========== F005: 资产分组显示 ==========
+  // ========== F005/F009: 资产分组显示 + 年度追踪 ==========
 
   getGroupedAssets() {
+    const currentYear = this.data.settings.currentYear;
+    
     const categoryNames = {
       selfUseRealEstate: '自用房产',
       investmentRealEstate: '投资房产',
@@ -60,6 +62,9 @@ const App = {
 
     const groups = {};
     this.data.assets.forEach(asset => {
+      // F009: 按年份过滤 - 只显示 buyYear <= currentYear 的资产
+      if (asset.buyYear > currentYear) return;
+      
       const type = asset.type || 'financial';
       const category = asset.category || 'other';
       const key = `${type}-${category}`;
@@ -322,11 +327,14 @@ const App = {
     `;
   },
   
-  // ========== 计算方法 ==========
+  // ========== F009: 计算方法（带年份过滤） ==========
   
   getTotalAssets(category) {
     const year = this.data.settings.currentYear;
     return this.data.assets.reduce((sum, asset) => {
+      // F009: 按年份过滤
+      if (asset.buyYear > year) return sum;
+      
       if (category === 'all') return sum + (asset.buyTotalPrice || 0);
       if (category === 'real') {
         if (asset.type === 'selfUse' || asset.type === 'investment') {

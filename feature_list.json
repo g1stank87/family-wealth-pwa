@@ -75,7 +75,8 @@
       "id": "F009",
       "category": "asset",
       "priority": "P1",
-      "passes": false,
+      "passes": true,
+      "completedDate": "2026-04-07",
       "title": "资产年度追踪",
       "description": "年度选择器（2023-2030），切换显示不同年份的数据视图"
     },
