@@ -48,7 +48,8 @@
       "id": "F006",
       "category": "asset",
       "priority": "P1",
-      "passes": false,
+      "passes": true,
+      "completedDate": "2026-04-07",
       "title": "资产条目新增",
       "description": "表单录入：类型、城市、名称、买入年份、单价、面积/数量，支持手动/预估切换"
     },

@@ -368,10 +368,176 @@ const App = {
     return (num || 0).toLocaleString('zh-CN', { maximumFractionDigits: 0 });
   },
   
-  // ========== 表单方法（占位）==========
-  
+  // ========== F006: 资产新增表单 ==========
+
   showAssetForm() {
-    alert('F006 资产新增 - 待实现');
+    const main = document.getElementById('main-content');
+    main.innerHTML = `
+      <div class="form-header">
+        <button class="btn-back" onclick="App.renderAssets()">← 返回</button>
+        <h2>新增资产</h2>
+      </div>
+      
+      <div class="card form-card">
+        <form id="assetForm" onsubmit="App.saveAsset(event)">
+          <div class="form-group">
+            <label class="form-label">资产类型 *</label>
+            <select class="form-input" id="assetType" required onchange="App.onTypeChange()">
+              <option value="">请选择</option>
+              <option value="selfUse">自用</option>
+              <option value="investment">投资</option>
+              <option value="financial">金融</option>
+            </select>
+          </div>
+          
+          <div class="form-group" id="categoryGroup" style="display:none;">
+            <label class="form-label">资产分类 *</label>
+            <select class="form-input" id="assetCategory">
+              <option value="">请选择</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">城市</label>
+            <input type="text" class="form-input" id="assetCity" placeholder="如：深圳">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">资产名称 *</label>
+            <input type="text" class="form-input" id="assetName" required placeholder="如：蔚蓝海岸花园">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">买入年份 *</label>
+            <input type="number" class="form-input" id="assetBuyYear" required 
+                   min="1990" max="2030" value="${new Date().getFullYear()}">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">单价（万元）</label>
+              <input type="number" class="form-input" id="assetPricePerSqm" 
+                     placeholder="如：5" min="0" step="0.1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">面积/数量</label>
+              <input type="number" class="form-input" id="assetArea" 
+                     placeholder="如：300" min="0" step="0.1">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">买入总价（万元）</label>
+            <input type="number" class="form-input" id="assetTotalPrice" 
+                   placeholder="自动计算或手动输入" min="0" step="0.1">
+            <small class="form-hint">单价×面积，或直接输入总价</small>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="App.renderAssets()">取消</button>
+            <button type="submit" class="btn btn-primary">保存</button>
+          </div>
+        </form>
+      </div>
+    `;
+    
+    // Auto-calculate total price
+    const priceInput = document.getElementById('assetPricePerSqm');
+    const areaInput = document.getElementById('assetArea');
+    const totalInput = document.getElementById('assetTotalPrice');
+    
+    const calcTotal = () => {
+      const price = parseFloat(priceInput.value) || 0;
+      const area = parseFloat(areaInput.value) || 0;
+      if (price && area) {
+        totalInput.value = (price * area).toFixed(1);
+      }
+    };
+    
+    priceInput.addEventListener('input', calcTotal);
+    areaInput.addEventListener('input', calcTotal);
+  },
+
+  onTypeChange() {
+    const type = document.getElementById('assetType').value;
+    const categoryGroup = document.getElementById('categoryGroup');
+    const categorySelect = document.getElementById('assetCategory');
+    
+    const categories = {
+      selfUse: [
+        { value: 'selfUseRealEstate', label: '自用房产' },
+        { value: 'selfUseVehicle', label: '自用车辆' },
+        { value: 'selfUseOther', label: '自用其他' }
+      ],
+      investment: [
+        { value: 'investmentRealEstate', label: '投资房产' },
+        { value: 'investmentStock', label: '投资股票' },
+        { value: 'investmentFund', label: '投资基金' }
+      ],
+      financial: [
+        { value: 'stock', label: '股票' },
+        { value: 'fund', label: '基金' },
+        { value: 'bond', label: '债券' },
+        { value: 'cash', label: '现金/存款' },
+        { value: 'other', label: '其他' }
+      ]
+    };
+    
+    if (type && categories[type]) {
+      categoryGroup.style.display = 'block';
+      categorySelect.innerHTML = '<option value="">请选择</option>' + 
+        categories[type].map(c => `<option value="${c.value}">${c.label}</option>`).join('');
+    } else {
+      categoryGroup.style.display = 'none';
+      categorySelect.innerHTML = '<option value="">请选择</option>';
+    }
+  },
+
+  saveAsset(event) {
+    event.preventDefault();
+    
+    const type = document.getElementById('assetType').value;
+    const category = document.getElementById('assetCategory').value;
+    const city = document.getElementById('assetCity').value.trim();
+    const name = document.getElementById('assetName').value.trim();
+    const buyYear = parseInt(document.getElementById('assetBuyYear').value);
+    const pricePerSqm = parseFloat(document.getElementById('assetPricePerSqm').value) || 0;
+    const area = parseFloat(document.getElementById('assetArea').value) || 0;
+    let totalPrice = parseFloat(document.getElementById('assetTotalPrice').value) || 0;
+    
+    // Validation
+    if (!type) { alert('请选择资产类型'); return; }
+    if (!name) { alert('请输入资产名称'); return; }
+    
+    // Auto-calculate total if not provided
+    if (!totalPrice && pricePerSqm && area) {
+      totalPrice = pricePerSqm * area;
+    }
+    
+    // Generate ID
+    const id = 'A' + String(this.data.assets.length + 1).padStart(3, '0');
+    
+    // Create asset object
+    const asset = {
+      id,
+      type,
+      category: category || 'other',
+      city,
+      name,
+      buyYear,
+      buyPricePerSqm: pricePerSqm,
+      area,
+      buyTotalPrice: totalPrice,
+      initialized: false,
+      initData: null
+    };
+    
+    // Save
+    this.data.assets.push(asset);
+    DataLayer.save(this.data);
+    
+    // Return to list
+    this.renderAssets();
   },
   
   showLiabilityForm() {

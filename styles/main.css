@@ -395,3 +395,96 @@ body {
   font-weight: 700;
   color: var(--accent);
 }
+
+/* F006: 表单样式 */
+.form-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.form-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.btn-back {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.btn-secondary {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:active {
+  background: var(--border);
+}
+
+.form-card {
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.form-label::after {
+  content: '';
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+  transition: border-color 0.2s;
+  background: var(--card-bg);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.form-actions .btn {
+  flex: 1;
+  padding: 14px;
+  font-size: 15px;
+}
