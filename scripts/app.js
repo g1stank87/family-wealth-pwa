@@ -131,7 +131,7 @@ const App = {
             <li class="asset-item" onclick="App.showAssetForm('${asset.id}')">
               <div class="asset-info">
                 <div class="asset-name">${asset.name}${asset.initialized ? ' 📊' : ''}</div>
-                <div class="asset-meta">${asset.city || ''} ${asset.area ? '· ' + asset.area + '㎡' : ''}</div>
+                <div class="asset-meta">${asset.city || ''} ${asset.area ? '· ' + asset.area + (asset.category === 'selfUseRealEstate' || asset.category === 'investmentRealEstate' ? '㎡' : '') : ''}</div>
                 ${returnDisplay}
               </div>
               <div class="asset-value">
@@ -2058,10 +2058,12 @@ const App = {
             continue; // section headers don't create assets
           }
 
-          // THEN: skip invalid data rows
+          // THEN: skip invalid data rows (column headers, subtotals, placeholders)
           if (!aVal || aVal === 'nan' || aVal.includes('小计') || aVal.includes('合计') || !cVal || cVal === 'nan' || cVal === 'XXXXXX') continue;
-          // Skip G=0 for sections that require G>0 (非车辆)
-          if (gVal <= 0 && !currentSubsection.includes('自用车辆') && !currentSubsection.includes('自用其他')) continue;
+          // Skip column header rows (e.g., "牌号" for 自用车辆, "类型" for 自用其他/收藏品, "名称" for some sections)
+          if (cVal === '牌号' || cVal === '类型' || cVal === '名称') continue;
+          // 自用车辆 and 自用其他 have no G column data (price stored differently), skip all their rows
+          if (currentSubsection.includes('自用车辆') || currentSubsection.includes('自用其他')) continue;
 
           let hasSeparatePriceArea = true;
           if (currentSubsection.includes('自用车辆') || currentSubsection.includes('自用其他')) {
