@@ -2035,6 +2035,8 @@ const App = {
           return rows;
         };
 
+        const rawAssetRows = parseAssetSheet(assetSheetName);
+
         // Build section map: track section type as we iterate rows
         // Row structure: r=0 section header, r=1 col header, r=2 helper, r>=3 data
         // Section header rows: A='实物资产' or '金融资产', C=subsection label
