@@ -2016,6 +2016,12 @@ const App = {
         };
 
         const assetRows = readSheet(assetSheetName);
+        
+        // DIAGNOSTIC: log first 20 rows to see what XLSX reads
+        console.log('DEBUG raw rows 0-19:');
+        assetRows.slice(0, 20).forEach((row, r) => {
+          console.log('r='+r, 'A='+JSON.stringify(row[0]), 'C='+JSON.stringify(row[2]), 'G='+row[6]);
+        });
 
         // Section types:
         // Type1 (自用房产/投资性x房): E=万元/㎡, F=㎡, G=E*F
@@ -2113,6 +2119,7 @@ const App = {
             } : null
           });
         }
+
 
         // Liabilities
         const liabRows = readSheet(liabSheetName);
