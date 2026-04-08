@@ -49,10 +49,7 @@ const DataLayer = {
         buyTotalPrice: 1500.0,
         initialized: true,
         initData: {
-          cumulativeHoldReturn: -10.0,
-          initTotalPrice: 3100.0,
-          cumulativeDisposeReturn: 1600.0,
-          cumulativeUtilizationRate: 1.0
+          cumulativeHoldReturn: -10.0, initTotalPrice: 3100.0, cumulativeDisposeReturn: 1600.0, cumulativeUtilizationRate: 1.0
         }
       },
       {
@@ -106,10 +103,7 @@ const DataLayer = {
         buyTotalPrice: 1500.0,
         initialized: true,
         initData: {
-          cumulativeHoldReturn: 108.0,
-          initTotalPrice: 3100.0,
-          cumulativeDisposeReturn: 1600.0,
-          cumulativeUtilizationRate: 1.0
+          cumulativeHoldReturn: 108.0, initTotalPrice: 3100.0, cumulativeDisposeReturn: 1600.0, cumulativeUtilizationRate: 1.0
         }
       },
       {
@@ -124,10 +118,7 @@ const DataLayer = {
         buyTotalPrice: 4550.0,
         initialized: true,
         initData: {
-          cumulativeHoldReturn: 126.0,
-          initTotalPrice: 4000.0,
-          cumulativeDisposeReturn: -550.0,
-          cumulativeUtilizationRate: 0.5
+          cumulativeHoldReturn: 126.0, initTotalPrice: 4000.0, cumulativeDisposeReturn: -550.0, cumulativeUtilizationRate: 0.5
         }
       },
       {
@@ -142,10 +133,7 @@ const DataLayer = {
         buyTotalPrice: 750.0,
         initialized: true,
         initData: {
-          cumulativeHoldReturn: 108.0,
-          initTotalPrice: 1200.0,
-          cumulativeDisposeReturn: 450.0,
-          cumulativeUtilizationRate: 1.0
+          cumulativeHoldReturn: 108.0, initTotalPrice: 1200.0, cumulativeDisposeReturn: 450.0, cumulativeUtilizationRate: 1.0
         }
       },
       {
@@ -160,10 +148,7 @@ const DataLayer = {
         buyTotalPrice: 6000.0,
         initialized: true,
         initData: {
-          cumulativeHoldReturn: 0,
-          initTotalPrice: 8000.0,
-          cumulativeDisposeReturn: 2000.0,
-          cumulativeUtilizationRate: 0
+          cumulativeHoldReturn: 0.0, initTotalPrice: 8000.0, cumulativeDisposeReturn: 2000.0, cumulativeUtilizationRate: 0.0
         }
       },
       {
@@ -178,10 +163,7 @@ const DataLayer = {
         buyTotalPrice: 50.0,
         initialized: true,
         initData: {
-          cumulativeHoldReturn: 5000.0,
-          initTotalPrice: 380.0,
-          cumulativeDisposeReturn: 500.0,
-          cumulativeUtilizationRate: 250.0
+          cumulativeHoldReturn: 5000.0, initTotalPrice: 380.0, cumulativeDisposeReturn: 500.0, cumulativeUtilizationRate: 250.0
         }
       },
       {
@@ -201,7 +183,7 @@ const DataLayer = {
         id: 'A011',
         type: 'financial',
         category: 'stock',
-        city: '科技',
+        city: '股票',
         name: 'DeepSeek',
         buyYear: 2025,
         buyPricePerSqm: 1000000.0,
@@ -222,10 +204,7 @@ const DataLayer = {
         buyTotalPrice: 1500.0,
         initialized: true,
         initData: {
-          cumulativeHoldReturn: 0.003,
-          initTotalPrice: 500000.0,
-          cumulativeDisposeReturn: 480000.0,
-          cumulativeUtilizationRate: 100.0
+          cumulativeHoldReturn: 0.003, initTotalPrice: 500000.0, cumulativeDisposeReturn: 480000.0, cumulativeUtilizationRate: 100.0
         }
       },
       {
@@ -254,8 +233,7 @@ const DataLayer = {
         initialized: false,
         initData: null
       }
-    ]
-    ];
+    ]];
 
     const seedLiabilities = [
 [
@@ -270,12 +248,7 @@ const DataLayer = {
         remainingMonths: 0,
         initialized: true,
         initData: {
-          initBorrowAmount: 1000.0,
-          cumulativeUnpaidInterest: -29000.0,
-          cumulativePaidInterest: 19590.0,
-          cumulativePaidPrincipal: 19000.0,
-          remainingInterest: 590.0,
-          remainingPrincipal: 0.04484848484848485
+          initBorrowAmount: 20000.0, cumulativeUnpaidInterest: 1000.0, cumulativePaidInterest: 29000.0, cumulativePaidPrincipal: 0.0, remainingInterest: 590.0, remainingPrincipal: 19000.0
         }
       },
       {
@@ -289,12 +262,7 @@ const DataLayer = {
         remainingMonths: 0,
         initialized: true,
         initData: {
-          initBorrowAmount: 160.0,
-          cumulativeUnpaidInterest: 1440.0,
-          cumulativePaidInterest: 2160.0,
-          cumulativePaidPrincipal: 2000.0,
-          remainingInterest: 160.0,
-          remainingPrincipal: 0.08
+          initBorrowAmount: 2000.0, cumulativeUnpaidInterest: 160.0, cumulativePaidInterest: 1440.0, cumulativePaidPrincipal: 0.0, remainingInterest: 160.0, remainingPrincipal: 2000.0
         }
       },
       {
@@ -308,12 +276,7 @@ const DataLayer = {
         remainingMonths: 0,
         initialized: true,
         initData: {
-          initBorrowAmount: 0.0,
-          cumulativeUnpaidInterest: 0.0,
-          cumulativePaidInterest: 200.0,
-          cumulativePaidPrincipal: 200.0,
-          remainingInterest: 0.0,
-          remainingPrincipal: 0.0
+          initBorrowAmount: 0.0, cumulativeUnpaidInterest: 0.0, cumulativePaidInterest: 200.0, cumulativePaidPrincipal: 0.0, remainingInterest: 0.0, remainingPrincipal: 0.0
         }
       },
       {
@@ -325,8 +288,10 @@ const DataLayer = {
         interestRate: 0.12,
         borrowAmount: 100.0,
         remainingMonths: 0,
-        initialized: false,
-        initData: null
+        initialized: true,
+        initData: {
+          initBorrowAmount: 120.0, cumulativeUnpaidInterest: 0.0, cumulativePaidInterest: 0.0, cumulativePaidPrincipal: 0.0, remainingInterest: 0.0, remainingPrincipal: 0.0
+        }
       },
       {
         id: 'L005',
@@ -339,17 +304,11 @@ const DataLayer = {
         remainingMonths: 0,
         initialized: true,
         initData: {
-          initBorrowAmount: 10000.0,
-          cumulativeUnpaidInterest: -70000.0,
-          cumulativePaidInterest: 70000.0,
-          cumulativePaidPrincipal: 60000.0,
-          remainingInterest: 10000.0,
-          remainingPrincipal: 0.045000000000000005
+          initBorrowAmount: 10000.0, cumulativeUnpaidInterest: -70000.0, cumulativePaidInterest: 70000.0, cumulativePaidPrincipal: 60000.0, remainingInterest: 10000.0, remainingPrincipal: 0.0
         }
       }
-    ]
-    ];
-    
+    ]];
+
     const data = {
       assets: seedAssets,
       liabilities: seedLiabilities,
