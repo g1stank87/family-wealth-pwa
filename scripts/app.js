@@ -1982,6 +1982,7 @@ const App = {
     replaceChk.addEventListener('change', () => { if(replaceChk.checked) mergeChk.checked = false; });
   },
 
+
   importFromExcel(event) {
     event.preventDefault();
     const file = document.getElementById('importFile').files[0];
@@ -1995,31 +1996,10 @@ const App = {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, {type: 'array'});
 
-        // Find asset sheet
         const assetSheetName = workbook.SheetNames.find(n => n.includes('资产')) || '资产台账';
         const liabSheetName = workbook.SheetNames.find(n => n.includes('负债')) || '负债台账';
-        const settingsSheetName = workbook.SheetNames.find(n => n.includes('配置')) || '配置参数';
 
-        // Section type mapping (based on subsection label in column C)
-        const getSectionType = (subsection) => {
-          if (!subsection) return { type: 'financial', category: 'other' };
-          if (subsection.includes('自用房产')) return { type: 'selfUse', category: 'selfUseRealEstate' };
-          if (subsection.includes('自用车辆')) return { type: 'selfUse', category: 'selfUseVehicle' };
-          if (subsection.includes('自用其他')) return { type: 'selfUse', category: 'selfUseOther' };
-          if (subsection.includes('投资性住房') || subsection.includes('投资性商铺') || subsection.includes('投资性期房')) return { type: 'investment', category: 'investmentRealEstate' };
-          if (subsection.includes('收藏品')) return { type: 'investment', category: 'investmentRealEstate' };
-          if (subsection.includes('不动产REITs')) return { type: 'investment', category: 'investmentRealEstate' };
-          if (subsection.includes('股票资产')) return { type: 'financial', category: 'stock' };
-          if (subsection.includes('基金资产')) return { type: 'financial', category: 'fund' };
-          if (subsection.includes('股权资产')) return { type: 'financial', category: 'equity' };
-          if (subsection.includes('衍生金融资产')) return { type: 'financial', category: 'other' };
-          if (subsection.includes('债券资产')) return { type: 'financial', category: 'bond' };
-          if (subsection.includes('现金')) return { type: 'financial', category: 'cash' };
-          if (subsection.includes('保险')) return { type: 'financial', category: 'other' };
-          return { type: 'financial', category: 'other' };
-        };
-
-        const parseAssetSheet = (sheetName) => {
+        const readSheet = (sheetName) => {
           const sheet = workbook.Sheets[sheetName];
           if (!sheet) return [];
           const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
@@ -2035,115 +2015,118 @@ const App = {
           return rows;
         };
 
-        const rawAssetRows = parseAssetSheet(assetSheetName);
+        const assetRows = readSheet(assetSheetName);
 
-        // Build section map: track section type as we iterate rows
-        // Row structure: r=0 section header, r=1 col header, r=2 helper, r>=3 data
-        // Section header rows: A='实物资产' or '金融资产', C=subsection label
-        let currentMainSection = '';
-        let currentSubsection = '';
-        const rowSectionMap = [];
+        // Section types:
+        // Type1 (自用房产/投资性x房): E=万元/㎡, F=㎡, G=E*F
+        // Type2 (自用车辆/自用其他): E=买入总价(万元), F=0
+        // Type3+ (收藏品/股票/REITs/债券/基金): E=元, F=数量, G=E*F/10000
 
-        for (let r = 0; r < rawAssetRows.length; r++) {
-          const row = rawAssetRows[r];
-          const aVal = String(row[0] || '').trim();
-          const cVal = String(row[2] || '').trim();
-
-          if (aVal === '实物资产' || aVal === '金融资产') {
-            currentMainSection = aVal;
-            currentSubsection = cVal;
-          }
-          // Determine section type for this row
-          let secType = { type: 'financial', category: 'other' };
-          if (currentMainSection === '实物资产') {
-            if (currentSubsection.includes('自用房产')) secType = { type: 'selfUse', category: 'selfUseRealEstate' };
-            else if (currentSubsection.includes('自用车辆')) secType = { type: 'selfUse', category: 'selfUseVehicle' };
-            else if (currentSubsection.includes('自用其他')) secType = { type: 'selfUse', category: 'selfUseOther' };
-            else if (currentSubsection.includes('投资性住房') || currentSubsection.includes('投资性商铺') || currentSubsection.includes('投资性期房') || currentSubsection.includes('收藏品') || currentSubsection.includes('不动产REITs')) secType = { type: 'investment', category: 'investmentRealEstate' };
-          } else if (currentMainSection === '金融资产') {
-            if (currentSubsection.includes('股票资产')) secType = { type: 'financial', category: 'stock' };
-            else if (currentSubsection.includes('基金资产')) secType = { type: 'financial', category: 'fund' };
-            else if (currentSubsection.includes('股权资产')) secType = { type: 'financial', category: 'equity' };
-            else if (currentSubsection.includes('衍生金融资产')) secType = { type: 'financial', category: 'other' };
-            else if (currentSubsection.includes('债券资产')) secType = { type: 'financial', category: 'bond' };
-            else if (currentSubsection.includes('现金')) secType = { type: 'financial', category: 'cash' };
-            else if (currentSubsection.includes('保险') || currentSubsection.includes('应收借款')) secType = { type: 'financial', category: 'other' };
-          }
-          rowSectionMap[r] = { mainSection: currentMainSection, subsection: currentSubsection, ...secType };
-        }
-
-        // Parse assets: data rows start at r=3
         const newAssets = [];
         let assetCounter = this.data.assets.length;
+        let currentMainSection = '';
+        let currentSubsection = '';
 
-        for (let r = 3; r < rawAssetRows.length; r++) {
-          const row = rawAssetRows[r];
+        for (let r = 3; r < assetRows.length; r++) {
+          const row = assetRows[r];
           const aVal = String(row[0] || '').trim();
           const cVal = String(row[2] || '').trim();
           const gVal = parseFloat(row[6]) || 0;
 
-          // Skip empty rows, subtotals, and placeholder rows
           if (!aVal || aVal === 'nan' || aVal.includes('小计') || aVal.includes('合计') || !cVal || cVal === 'nan' || cVal === 'XXXXXX' || gVal <= 0) continue;
 
-          const sec = rowSectionMap[r] || { type: 'financial', category: 'other' };
+          if (aVal === '实物资产' || aVal === '金融资产') {
+            currentMainSection = aVal;
+            currentSubsection = String(row[2] || '').trim();
+            continue;
+          }
+
+          let hasSeparatePriceArea = true;
+          if (currentSubsection.includes('自用车辆') || currentSubsection.includes('自用其他')) {
+            hasSeparatePriceArea = false;
+          }
+
+          let assetType = 'financial', assetCat = 'other';
+          if (currentMainSection === '实物资产') {
+            if (currentSubsection.includes('自用房产')) { assetType = 'selfUse'; assetCat = 'selfUseRealEstate'; }
+            else if (currentSubsection.includes('自用车辆')) { assetType = 'selfUse'; assetCat = 'selfUseVehicle'; }
+            else if (currentSubsection.includes('自用其他')) { assetType = 'selfUse'; assetCat = 'selfUseOther'; }
+            else { assetType = 'investment'; assetCat = 'investmentRealEstate'; }
+          } else if (currentMainSection === '金融资产') {
+            if (currentSubsection.includes('股票资产')) { assetType = 'financial'; assetCat = 'stock'; }
+            else if (currentSubsection.includes('基金资产')) { assetType = 'financial'; assetCat = 'fund'; }
+            else if (currentSubsection.includes('股权资产')) { assetType = 'financial'; assetCat = 'equity'; }
+            else if (currentSubsection.includes('衍生金融资产')) { assetType = 'financial'; assetCat = 'other'; }
+            else if (currentSubsection.includes('债券资产')) { assetType = 'financial'; assetCat = 'bond'; }
+            else if (currentSubsection.includes('现金')) { assetType = 'financial'; assetCat = 'cash'; }
+            else { assetType = 'financial'; assetCat = 'other'; }
+          }
+
           assetCounter++;
           const id = 'A' + String(assetCounter).padStart(3, '0');
           const bVal = String(row[1] || '').trim();
           const dVal = parseInt(row[3]) || new Date().getFullYear();
-          const eVal = parseFloat(row[4]) || 0;
-          const fVal = parseFloat(row[5]) || 0;
+          let eVal = 0, fVal = 0;
+
+          if (hasSeparatePriceArea) {
+            eVal = parseFloat(row[4]) || 0;
+            fVal = parseFloat(row[5]) || 0;
+          }
+
+          const totalPrice = parseFloat(row[6]) || 0;
           const hVal = parseFloat(row[7]) || 0;
           const iVal = parseFloat(row[8]) || 0;
           const jVal = parseFloat(row[9]) || 0;
 
+          let cumulativeHoldReturn = hVal;
+          let initTotalPrice = iVal;
+          let cumulativeDisposeReturn = jVal;
+
+          // 收藏品: H=持有数量, I=成本单价(元), J=2023末单价(元)
+          if (currentSubsection.includes('收藏品')) {
+            const qty = parseFloat(row[7]) || 0;
+            const costUnit = parseFloat(row[8]) || 0;
+            const endUnit = parseFloat(row[9]) || 0;
+            cumulativeHoldReturn = (endUnit - costUnit) * qty / 10000;
+            initTotalPrice = parseFloat(row[10]) || 0;
+          } else if (currentSubsection.includes('自用车辆') || currentSubsection.includes('自用其他')) {
+            cumulativeHoldReturn = 0;
+            initTotalPrice = 0;
+            cumulativeDisposeReturn = 0;
+          }
+
           newAssets.push({
             id,
-            type: sec.type,
-            category: sec.category,
-            city: sec.type === 'financial' ? bVal : '',
+            type: assetType,
+            category: assetCat,
+            city: assetType === 'financial' ? bVal : '',
             name: cVal,
             buyYear: dVal,
             buyPricePerSqm: eVal,
             area: fVal,
-            buyTotalPrice: gVal,
-            initialized: hVal !== 0 || iVal !== 0 || jVal !== 0,
-            initData: (hVal !== 0 || iVal !== 0 || jVal !== 0) ? {
-              cumulativeHoldReturn: hVal,
-              initTotalPrice: iVal,
-              cumulativeDisposeReturn: jVal
+            buyTotalPrice: totalPrice,
+            initialized: cumulativeHoldReturn !== 0 || initTotalPrice !== 0 || cumulativeDisposeReturn !== 0,
+            initData: (cumulativeHoldReturn !== 0 || initTotalPrice !== 0 || cumulativeDisposeReturn !== 0) ? {
+              cumulativeHoldReturn,
+              initTotalPrice,
+              cumulativeDisposeReturn
             } : null
           });
         }
 
-        // Parse liabilities: same structure as assets, skip r=0,1,2
-        const parseLiabSheet = (sheetName) => {
-          const sheet = workbook.Sheets[sheetName];
-          if (!sheet) return [];
-          const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
-          const rows = [];
-          for (let r = 0; r <= range.e.r; r++) {
-            const row = [];
-            for (let c = 0; c <= range.e.c; c++) {
-              const cell = sheet[XLSX.utils.encode_cell({r, c})];
-              row.push(cell ? (cell.v || '') : '');
-            }
-            rows.push(row);
-          }
-          return rows;
-        };
-        const liabRawRows = parseLiabSheet(liabSheetName);
-
+        // Liabilities
+        const liabRows = readSheet(liabSheetName);
         const newLiabs = [];
         let liabCounter = this.data.liabilities.length;
-        for (let r = 3; r < liabRawRows.length; r++) {
-          const row = liabRawRows[r];
+        for (let r = 3; r < liabRows.length; r++) {
+          const row = liabRows[r];
           const aVal = String(row[0] || '').trim();
-          const cVal = String(row[2] || '').trim(); // creditor
+          const cVal = String(row[2] || '').trim();
           const fVal = parseFloat(row[5]) || 0;
           if (!aVal || aVal === 'nan' || aVal.includes('小计') || aVal.includes('合计') || !cVal || cVal === 'nan' || cVal === 'XXXXXX' || fVal <= 0) continue;
           liabCounter++;
           const id = 'L' + String(liabCounter).padStart(3, '0');
-          const bVal = String(row[1] || '').trim(); // type
+          const bVal = String(row[1] || '').trim();
           const dVal = parseInt(row[3]) || new Date().getFullYear();
           const eVal = parseFloat(row[4]) || 0;
           const hVal = parseFloat(row[7]) || 0;
@@ -2170,7 +2153,6 @@ const App = {
           this.data.assets = newAssets;
           this.data.liabilities = newLiabs;
         } else {
-          // Merge: add new assets (skip if id already exists)
           const existingAssetIds = new Set(this.data.assets.map(a => a.id));
           const existingLiabIds = new Set(this.data.liabilities.map(l => l.id));
           newAssets.forEach(a => { if (!existingAssetIds.has(a.id)) this.data.assets.push(a); });
@@ -2178,16 +2160,14 @@ const App = {
         }
 
         DataLayer.save(this.data);
-        alert(`导入成功！\n新增资产：${newAssets.length} 条\n新增负债：${newLiabs.length} 条`);
+        alert('导入成功！\n资产：' + newAssets.length + ' 条\n负债：' + newLiabs.length + ' 条');
         this.renderAssets();
       } catch(err) {
         alert('导入失败：' + err.message);
       }
     };
     reader.readAsArrayBuffer(file);
-  },
-
-  // ========== F032: JSON Backup/Restore ==========
+  },// ========== F032: JSON Backup/Restore ==========
   exportBackup() {
     const data = this.data;
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
