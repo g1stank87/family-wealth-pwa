@@ -2000,31 +2000,12 @@ const App = {
         const liabSheetName = workbook.SheetNames.find(n => n.includes('负债')) || '负债台账';
         const settingsSheetName = workbook.SheetNames.find(n => n.includes('配置')) || '配置参数';
 
-        // Section type mapping (based on subsection label in column C)
-        const getSectionType = (subsection) => {
-          if (!subsection) return { type: 'financial', category: 'other' };
-          if (subsection.includes('自用房产')) return { type: 'selfUse', category: 'selfUseRealEstate' };
-          if (subsection.includes('自用车辆')) return { type: 'selfUse', category: 'selfUseVehicle' };
-          if (subsection.includes('自用其他')) return { type: 'selfUse', category: 'selfUseOther' };
-          if (subsection.includes('投资性住房') || subsection.includes('投资性商铺') || subsection.includes('投资性期房')) return { type: 'investment', category: 'investmentRealEstate' };
-          if (subsection.includes('收藏品')) return { type: 'investment', category: 'investmentRealEstate' };
-          if (subsection.includes('不动产REITs')) return { type: 'investment', category: 'investmentRealEstate' };
-          if (subsection.includes('股票资产')) return { type: 'financial', category: 'stock' };
-          if (subsection.includes('基金资产')) return { type: 'financial', category: 'fund' };
-          if (subsection.includes('股权资产')) return { type: 'financial', category: 'equity' };
-          if (subsection.includes('衍生金融资产')) return { type: 'financial', category: 'other' };
-          if (subsection.includes('债券资产')) return { type: 'financial', category: 'bond' };
-          if (subsection.includes('现金')) return { type: 'financial', category: 'cash' };
-          if (subsection.includes('保险')) return { type: 'financial', category: 'other' };
-          return { type: 'financial', category: 'other' };
-        };
-
-        const parseAssetSheet = (sheetName) => {
+        const parseSheet = (sheetName) => {
           const sheet = workbook.Sheets[sheetName];
           if (!sheet) return [];
           const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
           const rows = [];
-          for (let r = 0; r <= range.e.r; r++) {
+          for (let r = 1; r <= range.e.r; r++) { // skip header row
             const row = [];
             for (let c = 0; c <= range.e.c; c++) {
               const cell = sheet[XLSX.utils.encode_cell({r, c})];
@@ -2035,134 +2016,49 @@ const App = {
           return rows;
         };
 
-        // Build section map: track section type as we iterate rows
-        // Row structure: r=0 section header, r=1 col header, r=2 helper, r>=3 data
-        // Section header rows: A='实物资产' or '金融资产', C=subsection label
-        let currentMainSection = '';
-        let currentSubsection = '';
-        const rowSectionMap = [];
+        const assetRows = parseSheet(assetSheetName);
+        const liabRows = parseSheet(liabSheetName);
 
-        for (let r = 0; r < rawAssetRows.length; r++) {
-          const row = rawAssetRows[r];
-          const aVal = String(row[0] || '').trim();
-          const cVal = String(row[2] || '').trim();
-
-          if (aVal === '实物资产' || aVal === '金融资产') {
-            currentMainSection = aVal;
-            currentSubsection = cVal;
-          }
-          // Determine section type for this row
-          let secType = { type: 'financial', category: 'other' };
-          if (currentMainSection === '实物资产') {
-            if (currentSubsection.includes('自用房产')) secType = { type: 'selfUse', category: 'selfUseRealEstate' };
-            else if (currentSubsection.includes('自用车辆')) secType = { type: 'selfUse', category: 'selfUseVehicle' };
-            else if (currentSubsection.includes('自用其他')) secType = { type: 'selfUse', category: 'selfUseOther' };
-            else if (currentSubsection.includes('投资性住房') || currentSubsection.includes('投资性商铺') || currentSubsection.includes('投资性期房') || currentSubsection.includes('收藏品') || currentSubsection.includes('不动产REITs')) secType = { type: 'investment', category: 'investmentRealEstate' };
-          } else if (currentMainSection === '金融资产') {
-            if (currentSubsection.includes('股票资产')) secType = { type: 'financial', category: 'stock' };
-            else if (currentSubsection.includes('基金资产')) secType = { type: 'financial', category: 'fund' };
-            else if (currentSubsection.includes('股权资产')) secType = { type: 'financial', category: 'equity' };
-            else if (currentSubsection.includes('衍生金融资产')) secType = { type: 'financial', category: 'other' };
-            else if (currentSubsection.includes('债券资产')) secType = { type: 'financial', category: 'bond' };
-            else if (currentSubsection.includes('现金')) secType = { type: 'financial', category: 'cash' };
-            else if (currentSubsection.includes('保险') || currentSubsection.includes('应收借款')) secType = { type: 'financial', category: 'other' };
-          }
-          rowSectionMap[r] = { mainSection: currentMainSection, subsection: currentSubsection, ...secType };
-        }
-
-        // Parse assets: data rows start at r=3
-        const newAssets = [];
-        let assetCounter = this.data.assets.length;
-
-        for (let r = 3; r < rawAssetRows.length; r++) {
-          const row = rawAssetRows[r];
-          const aVal = String(row[0] || '').trim();
-          const cVal = String(row[2] || '').trim();
-          const gVal = parseFloat(row[6]) || 0;
-
-          // Skip empty rows, subtotals, and placeholder rows
-          if (!aVal || aVal === 'nan' || aVal.includes('小计') || aVal.includes('合计') || !cVal || cVal === 'nan' || cVal === 'XXXXXX' || gVal <= 0) continue;
-
-          const sec = rowSectionMap[r] || { type: 'financial', category: 'other' };
-          assetCounter++;
-          const id = 'A' + String(assetCounter).padStart(3, '0');
-          const bVal = String(row[1] || '').trim();
-          const dVal = parseInt(row[3]) || new Date().getFullYear();
-          const eVal = parseFloat(row[4]) || 0;
-          const fVal = parseFloat(row[5]) || 0;
-          const hVal = parseFloat(row[7]) || 0;
-          const iVal = parseFloat(row[8]) || 0;
-          const jVal = parseFloat(row[9]) || 0;
-
-          newAssets.push({
-            id,
-            type: sec.type,
-            category: sec.category,
-            city: sec.type === 'financial' ? bVal : '',
-            name: cVal,
-            buyYear: dVal,
-            buyPricePerSqm: eVal,
-            area: fVal,
-            buyTotalPrice: gVal,
-            initialized: hVal !== 0 || iVal !== 0 || jVal !== 0,
-            initData: (hVal !== 0 || iVal !== 0 || jVal !== 0) ? {
-              cumulativeHoldReturn: hVal,
-              initTotalPrice: iVal,
-              cumulativeDisposeReturn: jVal
+        // Parse assets
+        const newAssets = assetRows
+          .filter(r => r[4]) // has name
+          .map((r, i) => ({
+            id: r[0] || ('A' + String(this.data.assets.length + i + 1).padStart(3, '0')),
+            type: r[1] || 'financial',
+            category: r[2] || 'other',
+            city: r[3] || '',
+            name: r[4] || '',
+            buyYear: parseInt(r[5]) || new Date().getFullYear(),
+            buyPricePerSqm: parseFloat(r[6]) || 0,
+            area: parseFloat(r[7]) || 0,
+            buyTotalPrice: parseFloat(r[8]) || 0,
+            initialized: r[9] === '是',
+            initData: (r[10] || r[11] || r[12] || r[13]) ? {
+              initTotalPrice: parseFloat(r[10]) || 0,
+              cumulativeHoldReturn: parseFloat(r[11]) || 0,
+              cumulativeDisposeReturn: parseFloat(r[12]) || 0,
+              cumulativeUtilizationRate: parseFloat(r[13]) || 0
             } : null
-          });
-        }
+          }));
 
-        // Parse liabilities: same structure as assets, skip r=0,1,2
-        const parseLiabSheet = (sheetName) => {
-          const sheet = workbook.Sheets[sheetName];
-          if (!sheet) return [];
-          const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
-          const rows = [];
-          for (let r = 0; r <= range.e.r; r++) {
-            const row = [];
-            for (let c = 0; c <= range.e.c; c++) {
-              const cell = sheet[XLSX.utils.encode_cell({r, c})];
-              row.push(cell ? (cell.v || '') : '');
-            }
-            rows.push(row);
-          }
-          return rows;
-        };
-        const liabRawRows = parseLiabSheet(liabSheetName);
-
-        const newLiabs = [];
-        let liabCounter = this.data.liabilities.length;
-        for (let r = 3; r < liabRawRows.length; r++) {
-          const row = liabRawRows[r];
-          const aVal = String(row[0] || '').trim();
-          const cVal = String(row[2] || '').trim(); // creditor
-          const fVal = parseFloat(row[5]) || 0;
-          if (!aVal || aVal === 'nan' || aVal.includes('小计') || aVal.includes('合计') || !cVal || cVal === 'nan' || cVal === 'XXXXXX' || fVal <= 0) continue;
-          liabCounter++;
-          const id = 'L' + String(liabCounter).padStart(3, '0');
-          const bVal = String(row[1] || '').trim(); // type
-          const dVal = parseInt(row[3]) || new Date().getFullYear();
-          const eVal = parseFloat(row[4]) || 0;
-          const hVal = parseFloat(row[7]) || 0;
-          const iVal = parseFloat(row[8]) || 0;
-          const jVal = parseFloat(row[9]) || 0;
-          newLiabs.push({
-            id,
-            type: bVal || 'bank',
-            creditor: cVal,
-            buyYear: dVal,
-            interestRate: eVal,
-            borrowAmount: fVal,
-            remainingMonths: 0,
-            initialized: hVal !== 0 || iVal !== 0 || jVal !== 0,
-            initData: (hVal !== 0 || iVal !== 0 || jVal !== 0) ? {
-              initBorrowAmount: hVal,
-              cumulativeUnpaidInterest: iVal,
-              cumulativePaidInterest: jVal
+        // Parse liabilities
+        const newLiabs = liabRows
+          .filter(r => r[2]) // has creditor
+          .map((r, i) => ({
+            id: r[0] || ('L' + String(this.data.liabilities.length + i + 1).padStart(3, '0')),
+            type: r[1] || 'bank',
+            creditor: r[2] || '',
+            buyYear: parseInt(r[3]) || new Date().getFullYear(),
+            interestRate: parseFloat(r[4]) ? parseFloat(r[4]) / 100 : (parseFloat(r[4]) || 0),
+            borrowAmount: parseFloat(r[5]) || 0,
+            remainingMonths: parseInt(r[6]) || 0,
+            initialized: r[7] === '是',
+            initData: (r[8] || r[9] || r[10]) ? {
+              initBorrowAmount: parseFloat(r[8]) || 0,
+              cumulativeUnpaidInterest: parseFloat(r[9]) || 0,
+              cumulativePaidInterest: parseFloat(r[10]) || 0
             } : null
-          });
-        }
+          }));
 
         if (replaceMode) {
           this.data.assets = newAssets;
