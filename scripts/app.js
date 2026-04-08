@@ -2057,6 +2057,7 @@ const App = {
           if (aVal === '实物资产' || aVal === '金融资产') {
             currentMainSection = aVal;
             currentSubsection = String(row[2] || '').trim();
+            console.log('SECTION CHANGE at r='+r+': main='+currentMainSection+' subsection='+currentSubsection);
             continue;
           }
 
@@ -2114,6 +2115,7 @@ const App = {
             cumulativeDisposeReturn = 0;
           }
 
+          console.log('ASSET r='+r+': name='+cVal+' main='+currentMainSection+' subsection='+currentSubsection+' type='+assetType+' cat='+assetCat);
           newAssets.push({
             id,
             type: assetType,
