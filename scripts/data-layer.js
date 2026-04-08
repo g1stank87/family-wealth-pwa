@@ -183,7 +183,7 @@ const DataLayer = {
         id: 'A011',
         type: 'financial',
         category: 'stock',
-        city: '股票',
+        city: '科技',
         name: 'DeepSeek',
         buyYear: 2025,
         buyPricePerSqm: 1000000.0,
@@ -195,7 +195,7 @@ const DataLayer = {
       {
         id: 'A012',
         type: 'financial',
-        category: 'stock',
+        category: 'equity',
         city: '金融',
         name: '平安证券',
         buyYear: 2022,
