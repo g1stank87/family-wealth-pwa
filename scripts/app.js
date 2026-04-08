@@ -2049,7 +2049,10 @@ const App = {
           const cVal = String(row[2] || '').trim();
           const gVal = parseFloat(row[6]) || 0;
 
-          if (!aVal || aVal === 'nan' || aVal.includes('小计') || aVal.includes('合计') || !cVal || cVal === 'nan' || cVal === 'XXXXXX' || gVal <= 0) continue;
+          // Skip conditions: empty id, subtotal rows, placeholder names, or G=0 for non-vehicle sections
+          if (!aVal || aVal === 'nan' || aVal.includes('小计') || aVal.includes('合计') || !cVal || cVal === 'nan' || cVal === 'XXXXXX') continue;
+          // Skip only if G=0 AND section doesn't allow zero-G (车辆 has G=0 legitimately)
+          if (gVal <= 0 && !currentSubsection.includes('自用车辆') && !currentSubsection.includes('自用其他')) continue;
 
           if (aVal === '实物资产' || aVal === '金融资产') {
             currentMainSection = aVal;
