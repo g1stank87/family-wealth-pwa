@@ -1,4 +1,4 @@
-const CACHE_NAME = 'family-wealth-pwa-v2';
+const CACHE_NAME = 'family-wealth-pwa-v3';
 const ASSETS = [
   '/',
   '/index.html',
@@ -11,12 +11,21 @@ const ASSETS = [
   '/assets/icons/icon-512.png'
 ];
 
-// 安装事件
+// 安装事件 - 容错处理，单个失败不中止整体
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting())
+      .then(cache => {
+        return Promise.all(
+          ASSETS.map(url =>
+            fetch(url, { mode: 'cors' })
+              .then(response => {
+                if (response.ok) return cache.add(url);
+              })
+              .catch(err => console.warn('SW cache miss:', url, err))
+          )
+        ).then(() => self.skipWaiting());
+      })
   );
 });
 
