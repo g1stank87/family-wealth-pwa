@@ -2030,8 +2030,18 @@ const App = {
 
         const newAssets = [];
         let assetCounter = this.data.assets.length;
+        // Pre-scan first 3 rows to find initial section header
         let currentMainSection = '';
         let currentSubsection = '';
+        for (let r = 0; r < 3 && r < assetRows.length; r++) {
+          const row = assetRows[r];
+          const aVal = String(row[0] || '').trim();
+          if (aVal === '实物资产' || aVal === '金融资产') {
+            currentMainSection = aVal;
+            currentSubsection = String(row[2] || '').trim();
+            break;
+          }
+        }
 
         for (let r = 3; r < assetRows.length; r++) {
           const row = assetRows[r];
